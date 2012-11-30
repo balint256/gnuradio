@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2004,2005,2006,2007,2008,2009,2010 Free Software Foundation, Inc.
+ * Copyright 2004-2012 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -60,6 +60,7 @@
 #include <gr_complex_to_interleaved_short.h>
 #include <gr_interleaved_short_to_complex.h>
 //#include <gr_endianness.h>
+#include <gr_endian_swap.h>
 #include <gr_firdes.h>
 #include <gr_interleave.h>
 #include <gr_deinterleave.h>
@@ -181,6 +182,7 @@
 %include "gr_complex_to_xxx.i"
 %include "gr_complex_to_interleaved_short.i"
 //%include "gr_endianness.i"
+%include "gr_endian_swap.i"
 %include "gr_interleaved_short_to_complex.i"
 %include "gr_firdes.i"
 %include "gr_interleave.i"
@@ -264,3 +266,4 @@
 %include "gr_add_ff.i"
 %include "gr_vector_map.i"
 %include "gr_tag_debug.i"
+%include "gr_block_gateway.i"

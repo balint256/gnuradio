@@ -34,7 +34,7 @@ namespace gr {
 				     const std::vector<float> &taps)
       {
 	d_align = volk_get_alignment();
-	d_naligned = d_align / sizeof(float);
+	d_naligned = std::max((size_t)1, d_align / sizeof(float));
 
 	d_aligned_taps = NULL;
 	set_taps(taps);
@@ -50,7 +50,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 
@@ -66,7 +66,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 	
@@ -139,7 +139,7 @@ namespace gr {
 				     const std::vector<float> &taps)
       {
 	d_align = volk_get_alignment();
-	d_naligned = d_align / sizeof(gr_complex);
+	d_naligned = std::max((size_t)1, d_align / sizeof(gr_complex));
 
 	d_aligned_taps = NULL;
 	set_taps(taps);
@@ -155,7 +155,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 
@@ -171,7 +171,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 	
@@ -246,7 +246,7 @@ namespace gr {
 				     const std::vector<gr_complex> &taps)
       {
 	d_align = volk_get_alignment();
-	d_naligned = d_align / sizeof(float);
+	d_naligned = std::max((size_t)1, d_align / sizeof(float));
 
 	d_aligned_taps = NULL;
 	set_taps(taps);
@@ -262,7 +262,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 
@@ -278,7 +278,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 	
@@ -352,7 +352,7 @@ namespace gr {
 				     const std::vector<gr_complex> &taps)
       {
 	d_align = volk_get_alignment();
-	d_naligned = d_align / sizeof(gr_complex);
+	d_naligned = std::max((size_t)1, d_align / sizeof(gr_complex));
 
 	d_aligned_taps = NULL;
 	set_taps(taps);
@@ -368,7 +368,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 
@@ -384,7 +384,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 	
@@ -457,7 +457,7 @@ namespace gr {
 				     const std::vector<gr_complex> &taps)
       {
 	d_align = volk_get_alignment();
-	d_naligned = d_align / sizeof(short);
+	d_naligned = std::max((size_t)1, d_align / sizeof(short));
 
 	d_aligned_taps = NULL;
 	set_taps(taps);
@@ -473,7 +473,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 
@@ -489,7 +489,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 	
@@ -563,7 +563,7 @@ namespace gr {
 				     const std::vector<float> &taps)
       {
 	d_align = volk_get_alignment();
-	d_naligned = d_align / sizeof(float);
+	d_naligned = std::max((size_t)1, d_align / sizeof(float));
 
 	d_aligned_taps = NULL;
 	set_taps(taps);
@@ -579,7 +579,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 
@@ -595,7 +595,7 @@ namespace gr {
 	  for(int i = 0; i < d_naligned; i++) {
 	    fft::free(d_aligned_taps[i]);
 	  }
-	  fft::free(d_aligned_taps);
+	  ::free(d_aligned_taps);
 	  d_aligned_taps = NULL;
 	}
 	

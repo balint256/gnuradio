@@ -187,6 +187,7 @@ set(gr_core_general_triple_threats
     gr_agc2_ff
     gr_align_on_samplenumbers_ss
     gr_bin_statistics_f
+    gr_block_gateway
     gr_bytes_to_syms
     gr_char_to_float
     gr_char_to_short
@@ -207,6 +208,7 @@ set(gr_core_general_triple_threats
     gr_deinterleave
     gr_delay
     gr_encode_ccsds_27_bb
+    gr_endian_swap
     gr_fake_channel_coder_pp
     gr_feedforward_agc_cc
     gr_feval

@@ -251,6 +251,113 @@ class GR_CORE_API gr_block : public gr_basic_block {
    */
   void set_tag_propagation_policy(tag_propagation_policy_t p);
 
+  /*!
+   * \brief Return the maximum number of output items this block will
+   * handle during a call to work.
+   */
+  int max_noutput_items();
+
+  /*!
+   * \brief Set the maximum number of ouput items htis block will
+   * handle during a call to work.
+   *
+   * \param m the maximum noutput_items this block will handle.
+   */
+  void set_max_noutput_items(int m);
+
+  /*!
+   * \brief Clear the switch for using the max_noutput_items value of this block.
+   *
+   * When is_set_max_noutput_items() returns 'true', the scheduler
+   * will use the value returned by max_noutput_items() to limit the
+   * size of the number of items possible for this block's work
+   * function. If is_set_max_notput_items() returns 'false', then the
+   * scheduler ignores the internal value and uses the value set
+   * globally in the top_block.
+   *
+   * Use this value to clear the 'is_set' flag so the scheduler will
+   * ignore this. Use the set_max_noutput_items(m) call to both set a
+   * new value for max_noutput_items and to reenable its use in the
+   * scheduler.
+   */
+  void unset_max_noutput_items();
+
+  /*!
+   * \brief Ask the block if the flag is or is not set to use the
+   * internal value of max_noutput_items during a call to work.
+   */
+  bool is_set_max_noutput_items();
+
+  /*
+   * Used to expand the vectors that hold the min/max buffer sizes.
+   *
+   * Specifically, when -1 is used, the vectors are just initialized
+   * with 1 value; this is used by the flat_flowgraph to expand when
+   * required to add a new value for new ports on these blocks.
+   */
+  void expand_minmax_buffer(int port) {
+    if((size_t)port >= d_max_output_buffer.size())
+      set_max_output_buffer(port, -1);
+    if((size_t)port >= d_min_output_buffer.size())
+      set_min_output_buffer(port, -1);
+  }
+
+  /*!
+   * \brief Returns max buffer size on output port \p i.
+   */
+  long max_output_buffer(size_t i) {
+    if(i >= d_max_output_buffer.size())
+      throw std::invalid_argument("gr_basic_block::max_output_buffer: port out of range.");
+    return d_max_output_buffer[i];
+  }
+
+  /*!
+   * \brief Sets max buffer size on all output ports.
+   */
+  void set_max_output_buffer(long max_output_buffer) { 
+    for(int i = 0; i < output_signature()->max_streams(); i++) {
+      set_max_output_buffer(i, max_output_buffer);
+    }
+  }
+
+  /*!
+   * \brief Sets max buffer size on output port \p port.
+   */
+  void set_max_output_buffer(int port, long max_output_buffer) {
+    if((size_t)port >= d_max_output_buffer.size())
+      d_max_output_buffer.push_back(max_output_buffer);
+    else
+      d_max_output_buffer[port] = max_output_buffer; 
+  }
+
+  /*!
+   * \brief Returns min buffer size on output port \p i.
+   */
+  long min_output_buffer(size_t i) {
+    if(i >= d_min_output_buffer.size())
+      throw std::invalid_argument("gr_basic_block::min_output_buffer: port out of range.");
+    return d_min_output_buffer[i];
+  }
+
+  /*!
+   * \brief Sets min buffer size on all output ports.
+   */
+  void set_min_output_buffer(long min_output_buffer) {
+    for(int i=0; i<output_signature()->max_streams(); i++) {
+      set_min_output_buffer(i, min_output_buffer);
+    }
+  }
+
+  /*!
+   * \brief Sets min buffer size on output port \p port.
+   */
+  void set_min_output_buffer(int port, long min_output_buffer) {
+    if((size_t)port >= d_min_output_buffer.size())
+      d_min_output_buffer.push_back(min_output_buffer);
+    else
+      d_min_output_buffer[port] = min_output_buffer; 
+  }
+
   // ----------------------------------------------------------------------------
 
  private:
@@ -263,6 +370,8 @@ class GR_CORE_API gr_block : public gr_basic_block {
   gr_block_detail_sptr	d_detail;		// implementation details
   unsigned              d_history;
   bool                  d_fixed_rate;
+  bool                  d_max_noutput_items_set;     // if d_max_noutput_items is valid
+  int                   d_max_noutput_items;         // value of max_noutput_items for this block
   tag_propagation_policy_t d_tag_propagation_policy; // policy for moving tags downstream
 
  protected:
@@ -344,6 +453,10 @@ class GR_CORE_API gr_block : public gr_basic_block {
 			 uint64_t abs_start,
 			 uint64_t abs_end,
 			 const pmt::pmt_t &key);
+
+  std::vector<long>    d_max_output_buffer;
+  std::vector<long>    d_min_output_buffer;
+
 
   // These are really only for internal use, but leaving them public avoids
   // having to work up an ever-varying list of friend GR_CORE_APIs

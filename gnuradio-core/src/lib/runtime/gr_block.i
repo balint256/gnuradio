@@ -52,6 +52,20 @@ class gr_block : public gr_basic_block {
   uint64_t nitems_read(unsigned int which_input);
   uint64_t nitems_written(unsigned int which_output);
 
+  // Methods to manage the block's max_noutput_items size.
+  int max_noutput_items();
+  void set_max_noutput_items(int m);
+  void unset_max_noutput_items();
+  bool is_set_max_noutput_items();
+
+  // Methods to manage block's min/max buffer sizes.
+  long max_output_buffer(int i);
+  void set_max_output_buffer(long max_output_buffer);
+  void set_max_output_buffer(int port, long max_output_buffer);
+  long min_output_buffer(int i);
+  void set_min_output_buffer(long min_output_buffer);
+  void set_min_output_buffer(int port, long min_output_buffer);
+
   // internal use
   gr_block_detail_sptr detail () const { return d_detail; }
   void set_detail (gr_block_detail_sptr detail) { d_detail = detail; }

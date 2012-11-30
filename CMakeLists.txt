@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Free Software Foundation, Inc.
+# Copyright 2010-2012 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -41,7 +41,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 # Set the version information here
 set(VERSION_INFO_MAJOR_VERSION 3)
 set(VERSION_INFO_API_COMPAT    6)
-set(VERSION_INFO_MINOR_VERSION 2)
+set(VERSION_INFO_MINOR_VERSION 3)
 set(VERSION_INFO_MAINT_VERSION git)
 include(GrVersion) #setup version info
 
@@ -220,6 +220,14 @@ install(
     COMPONENT "docs"
 )
 
+########################################################################
+# The following dependency libraries are needed by all gr modules:
+########################################################################
+list(APPEND GR_TEST_TARGET_DEPS volk gruel gnuradio-core)
+list(APPEND GR_TEST_PYTHON_DIRS
+    ${CMAKE_BINARY_DIR}/gnuradio-core/src/python
+    ${CMAKE_BINARY_DIR}/gnuradio-core/src/lib/swig
+)
 
 ########################################################################
 # Add subdirectories (in order of deps)
@@ -234,6 +242,7 @@ add_subdirectory(gr-filter)
 add_subdirectory(gr-atsc)
 add_subdirectory(gr-audio)
 add_subdirectory(gr-comedi)
+add_subdirectory(gr-analog)
 add_subdirectory(gr-digital)
 add_subdirectory(gr-noaa)
 add_subdirectory(gr-pager)
@@ -247,6 +256,7 @@ add_subdirectory(gr-vocoder)
 add_subdirectory(gr-fcd)
 add_subdirectory(gr-wavelet)
 add_subdirectory(gr-wxgui)
+add_subdirectory(gr-blocks)
 
 #finalize cpack after subdirs processed
 include(GrPackage)
