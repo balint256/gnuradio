@@ -59,7 +59,8 @@ public:
         _stream_args(stream_args),
         _nchan(std::max<size_t>(1, stream_args.channels.size())),
         _stream_now(_nchan == 1),
-        _start_time_set(false)
+        _start_time_set(false),
+		_in_burst(false)
     {
         if (stream_args.cpu_format == "fc32") _type = boost::make_shared<uhd::io_type_t>(uhd::io_type_t::COMPLEX_FLOAT32);
         if (stream_args.cpu_format == "sc16") _type = boost::make_shared<uhd::io_type_t>(uhd::io_type_t::COMPLEX_INT16);
@@ -321,6 +322,10 @@ public:
         get_tags_in_range(_tags, 0, samp0_count, samp0_count + ninput_items);
         if (not _tags.empty()) this->tag_work(ninput_items);
 
+		if (_in_burst == false) {
+			//fprintf(stderr, "-- UHD Sink: consuming %d samples while NOT inside burst (output items: %d, read so far: %lu, SOB: %d, EOB: %d)\n", ninput_items, noutput_items, nitems_read(0), (int)_metadata.start_of_burst, (int)_metadata.end_of_burst);
+		}
+
         #ifdef GR_UHD_USE_STREAM_API
         //send all ninput_items with metadata
         const size_t num_sent = _tx_stream->send(
@@ -332,6 +337,10 @@ public:
             *_type, uhd::device::SEND_MODE_FULL_BUFF, 1.0
         );
         #endif
+
+		if (_metadata.end_of_burst) {
+			_in_burst = false;
+		}
 
         //increment the timespec by the number of samples sent
         _metadata.time_spec += uhd::time_spec_t(0, num_sent, _sample_rate);
@@ -353,6 +362,7 @@ public:
         //only transmit nsamples from 0 to the first tag
         //this ensures that the next work starts on a tag
         if (samp0_count != tag0_count){
+			//fprintf(stderr, "-- UHD Sink: Leaving next tag @ %ld for next work (read so far: %ld)\n", tag0_count, samp0_count);
             ninput_items = tag0_count - samp0_count;
             return;
         }
@@ -369,6 +379,7 @@ public:
             //determine how many samples to send...
             //from zero until the next tag or end of work
             if (my_tag_count != tag0_count){
+				//fprintf(stderr, "-- UHD Sink: Processing up to next tag @ %ld for next work (read so far: %ld)\n", my_tag_count, samp0_count);
                 ninput_items = my_tag_count - samp0_count;
                 break;
             }
@@ -382,7 +393,7 @@ public:
 
             //set the start of burst flag in the metadata
             else if (pmt::pmt_equal(key, SOB_KEY)){
-                _metadata.start_of_burst = pmt::pmt_to_bool(value);
+                _in_burst = _metadata.start_of_burst = pmt::pmt_to_bool(value);
             }
 
             //set the time specification in the metadata
@@ -468,6 +479,7 @@ private:
 
     //stream tags related stuff
     std::vector<gr_tag_t> _tags;
+	bool _in_burst;
 };
 
 /***********************************************************************
