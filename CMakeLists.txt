@@ -41,13 +41,20 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 # Set the version information here
 set(VERSION_INFO_MAJOR_VERSION 3)
 set(VERSION_INFO_API_COMPAT    6)
-set(VERSION_INFO_MINOR_VERSION 3)
+set(VERSION_INFO_MINOR_VERSION 5)
 set(VERSION_INFO_MAINT_VERSION git)
 include(GrVersion) #setup version info
 
 # Append -O2 optimization flag for Debug builds
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2")
 SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O2")
+
+########################################################################
+# Environment setup
+########################################################################
+IF(NOT DEFINED BOOST_ROOT)
+    SET(BOOST_ROOT ${CMAKE_INSTALL_PREFIX})
+ENDIF()
 
 ########################################################################
 # Import executables from a native build (for cross compiling)
@@ -109,6 +116,14 @@ set(GR_PKG_LIBEXEC_DIR  ${GR_LIBEXEC_DIR}/${CMAKE_PROJECT_NAME})
 set(GRC_BLOCKS_DIR      ${GR_PKG_DATA_DIR}/grc/blocks)
 set(SYSCONFDIR          "${CMAKE_INSTALL_PREFIX}/${GR_CONF_DIR}" CACHE PATH "System configuration directory")
 set(GR_PREFSDIR         ${SYSCONFDIR}/${CMAKE_PROJECT_NAME}/conf.d)
+
+OPTION(ENABLE_PERFORMANCE_COUNTERS "Enable block performance counters" OFF)
+if(ENABLE_PERFORMANCE_COUNTERS)
+  message(STATUS "ADDING PERF COUNTERS")
+  add_definitions(-DGR_PERFORMANCE_COUNTERS)
+else(ENABLE_PERFORMANCE_COUNTERS)
+  message(STATUS "NO PERF COUNTERS")
+endif(ENABLE_PERFORMANCE_COUNTERS)
 
 ########################################################################
 # Variables replaced when configuring the package config files
@@ -225,6 +240,8 @@ install(
 ########################################################################
 list(APPEND GR_TEST_TARGET_DEPS volk gruel gnuradio-core)
 list(APPEND GR_TEST_PYTHON_DIRS
+    ${CMAKE_SOURCE_DIR}/gruel/src/python
+    ${CMAKE_BINARY_DIR}/gruel/src/swig
     ${CMAKE_BINARY_DIR}/gnuradio-core/src/python
     ${CMAKE_BINARY_DIR}/gnuradio-core/src/lib/swig
 )

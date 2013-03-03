@@ -21,15 +21,15 @@
 # Setup the include and linker paths
 ########################################################################
 include_directories(
-    ${GNURADIO_CORE_INCLUDE_DIRS}
-    ${GR_ANALOG_INCLUDE_DIRS}
-    ${GR_DIGITAL_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}/../include
+    ${GR_DIGITAL_INCLUDE_DIRS}
+    ${GR_ANALOG_INCLUDE_DIRS}
+    ${GNURADIO_CORE_INCLUDE_DIRS}
+    ${GRUEL_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
 )
 
-include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
-
 
 ########################################################################
 # generate helper scripts to expand templated files
@@ -136,6 +136,7 @@ list(APPEND gr_digital_sources
     digital_probe_mpsk_snr_est_c.cc
     digital_scrambler_bb.cc
     digital_simple_framer.cc
+    digital_simple_correlator.cc
 )
 
 list(APPEND digital_libs

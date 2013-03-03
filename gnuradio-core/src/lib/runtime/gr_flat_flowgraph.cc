@@ -31,8 +31,9 @@
 #include <volk/volk.h>
 #include <iostream>
 #include <map>
+#include <boost/format.hpp>
 
-#define GR_FLAT_FLOWGRAPH_DEBUG 0
+#define GR_FLAT_FLOWGRAPH_DEBUG  0
 
 // 32Kbyte buffer size between blocks
 #define GR_FIXED_BUFFER_SIZE (32*(1L<<10))
@@ -70,6 +71,15 @@ gr_flat_flowgraph::setup_connections()
     block->set_unaligned(0);
     block->set_is_unaligned(false);
   }
+
+  // Connect message ports connetions
+  for(gr_msg_edge_viter_t i = d_msg_edges.begin(); i != d_msg_edges.end(); i++){
+    if(GR_FLAT_FLOWGRAPH_DEBUG)
+        std::cout << boost::format("flat_fg connecting msg primitives: (%s, %s)->(%s, %s)\n") %
+                    i->src().block() % i->src().port() %
+                    i->dst().block() % i->dst().port();
+    i->src().block()->message_port_sub( i->src().port(), pmt::pmt_cons(i->dst().block()->alias_pmt(), i->dst().port()) );
+    }
 
 }
 
@@ -350,3 +360,44 @@ gr_flat_flowgraph::make_block_vector(gr_basic_block_vector_t &blocks)
 
   return result;
 }
+
+
+void gr_flat_flowgraph::clear_endpoint(const gr_msg_endpoint &e, bool is_src){
+    for(size_t i=0; i<d_msg_edges.size(); i++){
+        if(is_src){
+            if(d_msg_edges[i].src() == e){
+                d_msg_edges.erase(d_msg_edges.begin() + i);
+                i--;
+            }
+        } else {
+            if(d_msg_edges[i].dst() == e){
+                d_msg_edges.erase(d_msg_edges.begin() + i);
+                i--;
+            }
+        }
+    }
+}
+
+void gr_flat_flowgraph::replace_endpoint(const gr_msg_endpoint &e, const gr_msg_endpoint &r, bool is_src){
+    size_t n_replr(0);
+    if(GR_FLAT_FLOWGRAPH_DEBUG)
+        std::cout << boost::format("gr_flat_flowgraph::replace_endpoint( %s, %s, %d )\n") % e.block()% r.block()% is_src;
+    for(size_t i=0; i<d_msg_edges.size(); i++){
+        if(is_src){
+            if(d_msg_edges[i].src() == e){
+                if(GR_FLAT_FLOWGRAPH_DEBUG)
+                    std::cout << boost::format("gr_flat_flowgraph::replace_endpoint() flattening to ( %s, %s )\n") % r.block()% d_msg_edges[i].dst().block();
+                d_msg_edges.push_back( gr_msg_edge(r, d_msg_edges[i].dst() ) );
+                n_replr++;
+            }
+        } else {
+            if(d_msg_edges[i].dst() == e){
+                if(GR_FLAT_FLOWGRAPH_DEBUG)
+                    std::cout << boost::format("gr_flat_flowgraph::replace_endpoint() flattening to ( %s, %s )\n") % r.block()% d_msg_edges[i].dst().block();
+                d_msg_edges.push_back( gr_msg_edge(d_msg_edges[i].src(), r ) );
+                n_replr++;
+            }
+        }
+    }
+}
+

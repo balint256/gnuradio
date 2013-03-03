@@ -32,12 +32,19 @@ using namespace pmt;
 gr_tpb_thread_body::gr_tpb_thread_body(gr_block_sptr block, int max_noutput_items)
   : d_exec(block, max_noutput_items)
 {
-  // std::cerr << "gr_tpb_thread_body: " << block << std::endl;
+  //std::cerr << "gr_tpb_thread_body: " << block << std::endl;
 
   gr_block_detail *d = block->detail().get();
   gr_block_executor::state s;
   pmt_t msg;
 
+  d->threaded = true;
+  d->thread = gruel::get_current_thread_id();
+
+  // Set thread affinity if it was set before fg was started.
+  if(block->processor_affinity().size() > 0) {
+    gruel::thread_bind_to_processor(d->thread, block->processor_affinity());
+  }
 
   while (1){
     boost::this_thread::interruption_point();
@@ -53,7 +60,12 @@ gr_tpb_thread_body::gr_tpb_thread_body(gr_block_sptr block, int max_noutput_item
     }
 
     d->d_tpb.clear_changed();
-    s = d_exec.run_one_iteration();
+    // run one iteration if we are a connected stream block
+    if(d->noutputs() >0 || d->ninputs()>0){
+        s = d_exec.run_one_iteration();
+    } else {
+        s = gr_block_executor::BLKD_IN;
+    }
 
     switch(s){
     case gr_block_executor::READY:		// Tell neighbors we made progress.
@@ -80,7 +92,7 @@ gr_tpb_thread_body::gr_tpb_thread_body(gr_block_sptr block, int max_noutput_item
 	  // handle all pending messages
       BOOST_FOREACH( gr_basic_block::msg_queue_map_t::value_type &i, block->msg_queue )
       {
-	    while ((msg = block->delete_head_nowait_already_holding_mutex(i.first))){
+	    while ((msg = block->delete_head_nowait(i.first))){
 	      guard.unlock();			// release lock while processing msg
 	      block->dispatch_msg(i.first, msg);
 	      guard.lock();
@@ -103,7 +115,7 @@ gr_tpb_thread_body::gr_tpb_thread_body(gr_block_sptr block, int max_noutput_item
 	  // handle all pending messages
       BOOST_FOREACH( gr_basic_block::msg_queue_map_t::value_type &i, block->msg_queue )
       {
-	    while ((msg = block->delete_head_nowait_already_holding_mutex(i.first))){
+	    while ((msg = block->delete_head_nowait(i.first))){
 	      guard.unlock();			// release lock while processing msg
 	      block->dispatch_msg(i.first,msg);
 	      guard.lock();

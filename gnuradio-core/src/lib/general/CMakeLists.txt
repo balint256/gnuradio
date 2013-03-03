@@ -259,6 +259,7 @@ set(gr_core_general_triple_threats
     gr_pwr_squelch_cc
     gr_pwr_squelch_ff
     gr_quadrature_demod_cf
+    gr_random_pdu
     gr_rail_ff
     gr_regenerate_bb
     gr_remez
@@ -299,6 +300,7 @@ set(gr_core_general_triple_threats
     gr_burst_tagger
     gr_correlate_access_code_tag_bb
     gr_tag_debug
+    gr_message_strobe
 )
 
 foreach(file_tt ${gr_core_general_triple_threats})

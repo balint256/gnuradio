@@ -29,6 +29,7 @@ GR_PYTHON_INSTALL(FILES
     gr_threading_24.py
     hier_block2.py
     prefs.py
+    tag_utils.py
     top_block.py
     pubsub.py
     DESTINATION ${GR_PYTHON_DIR}/gnuradio/gr
@@ -43,13 +44,6 @@ include(GrTest)
 file(GLOB py_qa_test_files "qa_*.py")
 foreach(py_qa_test_file ${py_qa_test_files})
     get_filename_component(py_qa_test_name ${py_qa_test_file} NAME_WE)
-    set(GR_TEST_PYTHON_DIRS
-        ${CMAKE_SOURCE_DIR}/gruel/src/python
-        ${CMAKE_BINARY_DIR}/gruel/src/swig
-        ${CMAKE_BINARY_DIR}/gnuradio-core/src/python
-        ${CMAKE_BINARY_DIR}/gnuradio-core/src/lib/swig
-    )
-    set(GR_TEST_TARGET_DEPS volk gruel gnuradio-core)
     GR_ADD_TEST(${py_qa_test_name} ${PYTHON_EXECUTABLE} ${PYTHON_DASH_B} ${py_qa_test_file})
 endforeach(py_qa_test_file)
 endif(ENABLE_TESTING)

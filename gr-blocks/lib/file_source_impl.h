@@ -24,6 +24,7 @@
 #define INCLUDED_BLOCKS_FILE_SOURCE_IMPL_H
 
 #include <blocks/file_source.h>
+#include <boost/thread/mutex.hpp>
 
 namespace gr {
   namespace blocks {
@@ -31,15 +32,22 @@ namespace gr {
     class BLOCKS_API file_source_impl : public file_source
     {
     private:
-      size_t  d_itemsize;
-      void   *d_fp;
-      bool    d_repeat;
+      size_t d_itemsize;
+      FILE *d_fp;
+      FILE *d_new_fp;
+      bool d_repeat;
+      bool d_updated;
+      boost::mutex fp_mutex;
       
+      void do_update();
+
     public:
       file_source_impl(size_t itemsize, const char *filename, bool repeat);
       ~file_source_impl();
 
       bool seek(long seek_point, int whence);
+      void open(const char *filename, bool repeat);
+      void close();
 
       int work(int noutput_items,
 	       gr_vector_const_void_star &input_items,

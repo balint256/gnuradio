@@ -29,13 +29,14 @@ from exceptions import *
 from hier_block2 import *
 from top_block import *
 from gateway import basic_block, sync_block, decim_block, interp_block
+from tag_utils import tag_to_python, tag_to_pmt
 
 # create a couple of aliases
 serial_to_parallel = stream_to_vector
 parallel_to_serial = vector_to_stream
 
 # Force the preference database to be initialized
-from prefs import prefs
+prefs = gr_prefs.singleton
 
 #alias old gr_add_vXX and gr_multiply_vXX
 add_vcc = add_cc
