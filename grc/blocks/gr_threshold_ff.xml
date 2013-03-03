@@ -8,7 +8,7 @@
 	<name>Threshold</name>
 	<key>gr_threshold_ff</key>
 	<import>from gnuradio import gr</import>
-	<make>gr.threshold_ff($low, $high, $init)</make>
+	<make>gr.threshold_ff($low, $high, $init, $discontinuous, $only_above)</make>
 	<callback>set_hi($high)</callback>
 	<callback>set_lo($low)</callback>
 	<param>
@@ -29,6 +29,39 @@
 		<value>0</value>
 		<type>real</type>
 	</param>
+
+	<param>
+		<name>Discontinuous</name>
+		<key>discontinuous</key>
+		<value>False</value>
+		<type>bool</type>
+		<hide>#if str($discontinuous) == 'False' then 'part' else 'none'#</hide>
+		<option>
+			<name>On</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>Off</name>
+			<key>False</key>
+		</option>
+	</param>
+
+	<param>
+		<name>Only Above</name>
+		<key>only_above</key>
+		<value>True</value>
+		<type>bool</type>
+		<hide>#if str($discontinuous) == 'False' then 'part' else 'none'#</hide>
+		<option>
+			<name>On</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>Off</name>
+			<key>False</key>
+		</option>
+	</param>
+
 	<sink>
 		<name>in</name>
 		<type>float</type>

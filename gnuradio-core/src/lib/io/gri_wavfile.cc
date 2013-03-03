@@ -134,9 +134,26 @@ gri_wavheader_parse(FILE *fp,
   }
 
   // data chunk
-  fresult = fread(str_buf, 1, 4, fp);
-  if (strncmp(str_buf, "data", 4)) {
-    return false;
+  while (true) {
+	fresult = fread(str_buf, 1, 4, fp);
+	if (fresult <= 0) {
+	  return false;
+	}
+    if (strncmp(str_buf, "data", 4) == 0) {
+	  break;
+	}
+	uint32_t skip = 0;
+	fread(&skip, 1, 4, fp);
+	skip = wav_to_host(skip);
+str_buf[4] = '\0';
+fprintf(stderr, "Encountered RIFF section \'%s\', skipping %d bytes\n", str_buf, skip);
+	if (skip == 0) {
+	  return false;
+	}
+	fresult = fseek(fp, skip, SEEK_CUR);
+	if (fresult < 0) {
+	  return false;
+	}
   }
 
   fresult = fread(&chunk_size, 1, 4, fp);

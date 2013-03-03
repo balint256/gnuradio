@@ -8,7 +8,14 @@
 	<name>PLL Freq Det</name>
 	<key>gr_pll_freqdet_cf</key>
 	<import>from gnuradio import gr</import>
-	<make>gr.pll_freqdet_cf($w, $max_freq, $min_freq)</make>
+	<make>gr.pll_freqdet_cf($w, $max_freq, $min_freq)
+#if $alpha() != None
+self.$(id).set_alpha($alpha())
+#end if
+#if $beta() != None
+self.$(id).set_beta($beta())
+#end if
+</make>
 	<callback>set_loop_bandwidth($w)</callback>
 	<param>
 		<name>Loop Bandwidth</name>
@@ -24,6 +31,18 @@
 		<name>Min Freq</name>
 		<key>min_freq</key>
 		<type>real</type>
+	</param>
+	<param>
+		<name>Alpha</name>
+		<key>alpha</key>
+		<value>None</value>
+		<type>raw</type>
+	</param>
+	<param>
+		<name>Beta</name>
+		<key>beta</key>
+		<value>None</value>
+		<type>raw</type>
 	</param>
 	<sink>
 		<name>in</name>

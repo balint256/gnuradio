@@ -30,16 +30,17 @@
 #include <gr_io_signature.h>
 
 gr_threshold_ff_sptr
-gr_make_threshold_ff (float lo, float hi, float initial_state)
+gr_make_threshold_ff (float lo, float hi, float initial_state, bool discontinuous, bool only_above)
 {
-  return gnuradio::get_initial_sptr(new gr_threshold_ff (lo, hi, initial_state));
+  return gnuradio::get_initial_sptr(new gr_threshold_ff (lo, hi, initial_state, discontinuous, only_above));
 }
 
-gr_threshold_ff::gr_threshold_ff (float lo, float hi, float initial_state)
+gr_threshold_ff::gr_threshold_ff (float lo, float hi, float initial_state, bool discontinuous, bool only_above)
   : gr_sync_block ("threshold_ff",
 		   gr_make_io_signature (1, 1, sizeof (float)),
 		   gr_make_io_signature (1, 1, sizeof (float))),
-    d_lo (lo), d_hi (hi), d_last_state (initial_state)
+    d_lo (lo), d_hi (hi), d_last_state (initial_state),
+    d_discontinuous(false), d_only_above(true)
 {
 }
 
@@ -51,17 +52,40 @@ gr_threshold_ff::work (int noutput_items,
   const float *in = (const float *) input_items[0];
   float *out = (float *) output_items[0];
 
+  int generated_items = (d_discontinuous ? 0 : noutput_items);
 
   for(int i=0; i<noutput_items; i++) {
     if (in[i] > d_hi) {
-      out[i] = 1.0;
+
+      if (d_discontinuous == false)
+        out[i] = 1.0;
+      else {
+        if (d_last_state != 1.0) {
+          out[generated_items++] = 1.0;
+        }
+      }
+
       d_last_state = 1.0;
+
     } else if (in[i] < d_lo) {
-      out[i] = 0.0;
+
+      if (d_discontinuous == false)
+        out[i] = 0.0;
+      else {
+        if ((d_only_above == false) && (d_last_state != 0.0)) {
+          out[generated_items++] = 0.0;
+        }
+      }
+
       d_last_state = 0.0;
-    } else
-      out[i] = d_last_state;
+
+    } else {
+
+      if (d_discontinuous == false)
+        out[i] = d_last_state;
+
+    }
   }
 
-  return noutput_items;
+  return generated_items;
 }

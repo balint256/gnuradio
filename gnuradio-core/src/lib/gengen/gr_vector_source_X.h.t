@@ -27,6 +27,7 @@
 
 #include <gr_core_api.h>
 #include <gr_sync_block.h>
+#include <gruel/thread.h>
 
 class GR_CORE_API @NAME@;
 typedef boost::shared_ptr<@NAME@> @NAME@_sptr;
@@ -40,19 +41,21 @@ class @NAME@ : public gr_sync_block {
   friend GR_CORE_API @NAME@_sptr
   gr_make_@BASE_NAME@ (const std::vector<@TYPE@> &data, bool repeat, int vlen);
 
-  std::vector<@TYPE@>	d_data;
-  bool			d_repeat;
+  std::vector<@TYPE@>	d_data, d_data_new;
+  bool			d_repeat, d_new;
   unsigned int		d_offset;
+  gruel::mutex	d_mutex;
   int			d_vlen;
 
   @NAME@ (const std::vector<@TYPE@> &data, bool repeat, int vlen);
 
  public:
   void rewind() {d_offset=0;}
+  void set_data(const std::vector<@TYPE@> &data);
   virtual int work (int noutput_items,
 		    gr_vector_const_void_star &input_items,
 		    gr_vector_void_star &output_items);
-  void set_data(const std::vector<@TYPE@> &data){ d_data = data; rewind(); }
+//  void set_data(const std::vector<@TYPE@> &data){ d_data = data; rewind(); }
 };
 
 GR_CORE_API @NAME@_sptr

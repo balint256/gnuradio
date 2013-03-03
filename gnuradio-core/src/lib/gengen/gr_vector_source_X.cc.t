@@ -38,10 +38,26 @@
     d_data (data),
     d_repeat (repeat),
     d_offset (0),
+	d_new(false),
     d_vlen (vlen)
 {
   if ((data.size() % vlen) != 0)
     throw std::invalid_argument("data length must be a multiple of vlen");
+}
+
+void @NAME@::set_data(const std::vector<@TYPE@> &data)
+{
+  gruel::scoped_lock guard(d_mutex);
+  
+  if (d_offset == 0)
+  {
+	d_data = data;
+  }
+  else
+  {
+    d_data_new = data;
+	d_new = true;
+  }
 }
 
 int
@@ -53,6 +69,9 @@ int
 
   if (d_repeat){
     unsigned int size = d_data.size ();
+	
+	gruel::scoped_lock guard(d_mutex);
+	
     unsigned int offset = d_offset;
 
     if (size == 0)
@@ -61,7 +80,15 @@ int
     for (int i = 0; i < noutput_items*d_vlen; i++){
       optr[i] = d_data[offset++];
       if (offset >= size)
-	offset = 0;
+	  {
+		offset = 0;
+		
+		if (d_new)
+		{
+		  d_data = d_data_new;
+		  d_new = false;
+		}
+	  }
     }
     d_offset = offset;
     return noutput_items;

@@ -123,13 +123,14 @@ gr_wavfile_source::work(int noutput_items,
   for (i = 0; i < noutput_items; i++) {
     if (d_sample_idx >= d_samples_per_chan) {
       if (!d_repeat) {
-	// if nothing was read at all, say we're done.
-	return i ? i : -1;
+    	// if nothing was read at all, say we're done.
+if (i) fprintf(stderr, "WAVE file source DONE\n");
+        return i ? i : -1;
       }
-
+fprintf(stderr, "WAVE file source looping...\n");
       if (fseek (d_fp, d_first_sample_pos, SEEK_SET) == -1) {
-	fprintf(stderr, "[%s] fseek failed\n", __FILE__);
-	exit(-1);
+        fprintf(stderr, "[%s] fseek failed\n", __FILE__);
+    	exit(-1);
       }
 
       d_sample_idx = 0;

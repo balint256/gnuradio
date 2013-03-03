@@ -29,7 +29,7 @@
 class gr_threshold_ff;
 typedef boost::shared_ptr<gr_threshold_ff> gr_threshold_ff_sptr;
 
-GR_CORE_API gr_threshold_ff_sptr gr_make_threshold_ff (float lo, float hi, float initial_state=0);
+GR_CORE_API gr_threshold_ff_sptr gr_make_threshold_ff (float lo, float hi, float initial_state=0, bool discontinuous=false, bool only_above=true);
 
 /*!
  * \brief Please fix my documentation
@@ -37,11 +37,12 @@ GR_CORE_API gr_threshold_ff_sptr gr_make_threshold_ff (float lo, float hi, float
  */
 class GR_CORE_API gr_threshold_ff : public gr_sync_block
 {
-  friend GR_CORE_API gr_threshold_ff_sptr gr_make_threshold_ff (float lo, float hi, float initial_state);
+  friend GR_CORE_API gr_threshold_ff_sptr gr_make_threshold_ff (float lo, float hi, float initial_state, bool discontinuous, bool only_above);
 
   float	d_lo,d_hi;		// the constant
   float d_last_state;
-  gr_threshold_ff (float lo, float hi, float initial_state);
+  bool d_discontinuous, d_only_above;
+  gr_threshold_ff (float lo, float hi, float initial_state, bool discontinuous, bool only_above);
 
  public:
   float lo () const { return d_lo; }
