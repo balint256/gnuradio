@@ -31,7 +31,7 @@ class digital_ofdm_cyclic_prefixer;
 typedef boost::shared_ptr<digital_ofdm_cyclic_prefixer> digital_ofdm_cyclic_prefixer_sptr;
 
 DIGITAL_API digital_ofdm_cyclic_prefixer_sptr 
-digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size);
+digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size, const std::vector<float> &window = std::vector<float>());
 
 
 /*!
@@ -42,18 +42,21 @@ digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size);
 class DIGITAL_API digital_ofdm_cyclic_prefixer : public gr_sync_interpolator
 {
   friend DIGITAL_API digital_ofdm_cyclic_prefixer_sptr
-    digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size);
+    digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size, const std::vector<float> &window);
 
  protected:
-  digital_ofdm_cyclic_prefixer (size_t input_size, size_t output_size);
+  digital_ofdm_cyclic_prefixer (size_t input_size, size_t output_size, const std::vector<float> &window);
 
  public:
+  virtual ~digital_ofdm_cyclic_prefixer();
   int work (int noutput_items,
 	    gr_vector_const_void_star &input_items,
 	    gr_vector_void_star &output_items);
  private:
   size_t d_input_size;
   size_t d_output_size;
+  std::vector<float> d_window;
+  gr_complex* d_buffer;
 };
 
 #endif /* INCLUDED_DIGITAL_OFDM_CYCLIC_PREFIXER_H */

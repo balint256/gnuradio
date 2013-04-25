@@ -23,12 +23,13 @@
 GR_SWIG_BLOCK_MAGIC(digital,ofdm_cyclic_prefixer)
 
 digital_ofdm_cyclic_prefixer_sptr 
-digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size);
+digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size, const std::vector<float> &window = std::vector<float>());
 
 class digital_ofdm_cyclic_prefixer : public gr_sync_interpolator
 {
  protected:
-  digital_ofdm_cyclic_prefixer (size_t input_size, size_t output_size);
+  digital_ofdm_cyclic_prefixer (size_t input_size, size_t output_size, const std::vector<float> &window);
 
  public:
+  virtual ~digital_ofdm_cyclic_prefixer();
 };

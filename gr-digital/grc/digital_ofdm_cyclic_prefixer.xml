@@ -29,7 +29,7 @@
 	<name>OFDM Cyclic Prefixer</name>
 	<key>digital_ofdm_cyclic_prefixer</key>
 	<import>from gnuradio import digital</import>
-	<make>digital.ofdm_cyclic_prefixer($input_size, $output_size)</make>
+	<make>digital.ofdm_cyclic_prefixer($input_size, $output_size, $window)</make>
 	<param>
 		<name>Input Size</name>
 		<key>input_size</key>
@@ -39,6 +39,13 @@
 		<name>Output Size</name>
 		<key>output_size</key>
 		<type>int</type>
+	</param>
+	<param>
+		<name>Window</name>
+		<key>window</key>
+		<value>[]</value>
+		<type>real_vector</type>
+		<hide>#if len($window()) == 0 then 'part' else 'none'#</hide>
 	</param>
 	<sink>
 		<name>in</name>

@@ -46,6 +46,9 @@ def midm1(fft_size):
 def midp1(fft_size):
     return (fft_size+1)/2
 
+def midn(fft_size):
+	return fft_size/2
+
 def freq(fft_size):
     return 2.0*math.pi/fft_size
 
@@ -71,7 +74,7 @@ def welch(fft_size):
     window = [0 for i in range(fft_size)]
     j = fft_size-1
     for index in xrange(midn(fft_size)+1):
-        window[j] = window[index] = (1.0 - math.sqrt((index - midm1(fft_size)) / midp1(fft_size)))
+        window[j] = window[index] = (1.0 - ((1.0 * index - midm1(fft_size)) / midp1(fft_size))**2)
         j -= 1
     return window
 

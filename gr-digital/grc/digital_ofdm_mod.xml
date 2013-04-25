@@ -39,6 +39,7 @@
 			pad_for_usrp=$pad_for_usrp,
 			log=None,
 			verbose=None,
+			window=$window
 		),
 	),
 	payload_length=$payload_length,
@@ -124,6 +125,13 @@
 		<key>cp_length</key>
 		<value>128</value>
 		<type>int</type>
+	</param>
+	<param>
+		<name>Window</name>
+		<key>window</key>
+		<value>[]</value>
+		<type>real_vector</type>
+		<hide>#if len($window()) == 0 then 'part' else 'none'#</hide>
 	</param>
 	<param>
 		<name>Pad for USRP</name>

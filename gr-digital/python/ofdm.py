@@ -27,6 +27,7 @@ import ofdm_packet_utils
 from ofdm_receiver import ofdm_receiver
 import gnuradio.gr.gr_threading as _threading
 import psk, qam
+from gnuradio import window
 
 # /////////////////////////////////////////////////////////////////////////////
 #                   mod/demod with packets as i/o
@@ -39,7 +40,7 @@ class ofdm_mod(gr.hier_block2):
     
     Send packets by calling send_pkt
     """
-    def __init__(self, options, msgq_limit=2, pad_for_usrp=True):
+    def __init__(self, options, msgq_limit=2, pad_for_usrp=True, cp_window=[]):
         """
 	Hierarchical block for sending packets
 
@@ -105,8 +106,11 @@ class ofdm_mod(gr.hier_block2):
         self.preambles = digital_swig.ofdm_insert_preamble(self._fft_length,
                                                            padded_preambles)
         self.ifft = gr.fft_vcc(self._fft_length, False, win, True)
-        self.cp_adder = digital_swig.ofdm_cyclic_prefixer(self._fft_length,
-                                                          symbol_length)
+        
+        if hasattr(options, 'window'):
+            cp_window = options.window
+        self.cp_adder = digital_swig.ofdm_cyclic_prefixer(self._fft_length, symbol_length, cp_window)
+        
         self.scale = gr.multiply_const_cc(1.0 / math.sqrt(self._fft_length))
         
         self.connect((self._pkt_input, 0), (self.preambles, 0))
