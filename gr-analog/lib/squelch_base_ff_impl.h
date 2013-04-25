@@ -35,7 +35,10 @@ namespace gr {
       int    d_ramped;
       bool   d_gate;
       double d_envelope;
-      enum { ST_MUTED, ST_ATTACK, ST_UNMUTED, ST_DECAY } d_state;
+      pmt::pmt_t d_id;
+      pmt::pmt_t d_key;
+      pmt::pmt_t d_muted_value, d_attack_value, d_unmuted_value, d_decay_value;
+      enum squelch_state_t { ST_MUTED, ST_ATTACK, ST_UNMUTED, ST_DECAY } d_state;
 
     protected:
       virtual void update_state(const float &sample) {};

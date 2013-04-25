@@ -40,6 +40,16 @@ namespace gr {
       d_state = ST_MUTED;
       d_envelope = d_ramp ? 0.0 : 1.0;
       d_ramped = 0;
+      
+      std::stringstream str;
+      str << name << "<" << unique_id() << ">";
+      d_id  = pmt::pmt_string_to_symbol(str.str());
+      d_key = pmt::pmt_string_to_symbol("squelch");
+
+      d_muted_value = pmt::pmt_string_to_symbol("muted");
+      d_attack_value = pmt::pmt_string_to_symbol("attack");
+      d_unmuted_value = pmt::pmt_string_to_symbol("unmuted");
+      d_decay_value = pmt::pmt_string_to_symbol("decay");
     }
 
     squelch_base_cc_impl::~squelch_base_cc_impl()
@@ -91,6 +101,7 @@ namespace gr {
 	update_state(in[i]);
 
 	// Adjust envelope based on current state
+    squelch_state_t previous_state = d_state;
 	switch(d_state) {
 	case ST_MUTED:
 	  if(!mute()) {
@@ -130,7 +141,29 @@ namespace gr {
 	    out[j++] = 0.0;
 	  }
 	}
-      }
+    
+        if (d_state != previous_state) {
+            pmt::pmt_t value = d_muted_value;
+            int offset = 0;
+            switch (d_state)
+            {
+              case ST_UNMUTED:
+                value = d_unmuted_value;
+                break;
+              case ST_ATTACK:
+                value = d_attack_value;
+                break;
+              case ST_DECAY:
+                value = d_decay_value;
+                break;
+              case ST_MUTED:
+                offset = (d_gate ? -1 : 0);
+              default:
+                break;
+            }
+            add_item_tag(0, nitems_written(0)+(j-1), d_key, value, d_id);
+          }
+        }
 
       consume_each(noutput_items);  // Use all the inputs
       return j;		        // But only report outputs copied
