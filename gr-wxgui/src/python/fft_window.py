@@ -49,6 +49,10 @@ TRACES_COLOR_SPEC = {
 	'A': (1.0, 0.0, 0.0),
 	'B': (0.8, 0.0, 0.8),
 }
+THRESHOLD_LINE_COLOR_SPEC = (0.8, 0.0, 0.0)
+THRESHOLD_KEY = 'threshold_level'
+FREQ_OF_INTEREST_COLOR_SPEC = (0.0, 0.8, 0.0)
+FREQ_OF_INTEREST_KEY = 'freq_of_interest'
 
 ##################################################
 # FFT window control panel
@@ -224,8 +228,10 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		avg_alpha_key,
 		peak_hold,
 		msg_key,
-                use_persistence,
-                persist_alpha,
+		use_persistence,
+		persist_alpha,
+		threshold_level,
+		freq_of_interest,
 	):
 
 		pubsub.pubsub.__init__(self)
@@ -250,6 +256,8 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		self[RUNNING_KEY] = True
 		self[USE_PERSISTENCE_KEY] = use_persistence
 		self[PERSIST_ALPHA_KEY] = persist_alpha
+		self[THRESHOLD_KEY] = threshold_level
+		self[FREQ_OF_INTEREST_KEY] = freq_of_interest
 		for trace in TRACES:
 			#a function that returns a function
 			#so the function wont use local trace
@@ -278,8 +286,8 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		self.plotter.enable_legend(True)
 		self.plotter.enable_point_label(True)
 		self.plotter.enable_grid_lines(True)
-                self.plotter.set_use_persistence(use_persistence)
-                self.plotter.set_persist_alpha(persist_alpha)
+		self.plotter.set_use_persistence(use_persistence)
+		self.plotter.set_persist_alpha(persist_alpha)
 		#setup the box with plot and controls
 		self.control_panel = control_panel(self)
 		main_box = wx.BoxSizer(wx.HORIZONTAL)
@@ -297,8 +305,14 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		): self.subscribe(key, self.update_grid)
 		self.subscribe(USE_PERSISTENCE_KEY, self.plotter.set_use_persistence)
 		self.subscribe(PERSIST_ALPHA_KEY, self.plotter.set_persist_alpha)
+		self.subscribe(THRESHOLD_KEY, self.plotter.set_horizontal_line)
+		self.subscribe(FREQ_OF_INTEREST_KEY, self.plotter.set_vertical_line)
 		#initial update
 		self.update_grid()
+		if threshold_level is not None:
+			self.plotter.set_horizontal_line(threshold_level)
+		if freq_of_interest is not None:
+			self.plotter.set_vertical_line(freq_of_interest)
 
 	def set_callback(self,callb):
 		self.plotter.set_callback(callb)

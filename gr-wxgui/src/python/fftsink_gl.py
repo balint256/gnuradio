@@ -56,8 +56,10 @@ class _fft_sink_base(gr.hier_block2, common.wxgui_hb):
 		size=fft_window.DEFAULT_WIN_SIZE,
 		peak_hold=False,
 		win=None,
-                use_persistence=False,
-                persist_alpha=None,
+		use_persistence=False,
+		persist_alpha=None,
+		threshold_level=None,
+		freq_of_interest=None,
 		**kwargs #do not end with a comma
 	):
 		#ensure avg alpha
@@ -119,12 +121,16 @@ class _fft_sink_base(gr.hier_block2, common.wxgui_hb):
 			avg_alpha_key=AVG_ALPHA_KEY,
 			peak_hold=peak_hold,
 			msg_key=MSG_KEY,
-                        use_persistence=use_persistence,
-                        persist_alpha=persist_alpha,
+			use_persistence=use_persistence,
+			persist_alpha=persist_alpha,
+			threshold_level=threshold_level,
+			freq_of_interest=freq_of_interest
 		)
 		common.register_access_methods(self, self.win)
 		setattr(self.win, 'set_baseband_freq', getattr(self, 'set_baseband_freq')) #BACKWARDS
 		setattr(self.win, 'set_peak_hold', getattr(self, 'set_peak_hold')) #BACKWARDS
+		setattr(self.win, 'set_threshold_level', getattr(self, 'set_threshold_level')) #BACKWARDS
+		setattr(self.win, 'set_freq_of_interest', getattr(self, 'set_freq_of_interest')) #BACKWARDS
 		#connect
 		self.wxgui_connect(self, fft, sink)
 		

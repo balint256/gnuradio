@@ -151,10 +151,10 @@ class plotter_base(wx.glcanvas.GLCanvas, common.mutex):
 		Resize the view port if the width or height changed.
 		Redraw the screen, calling the draw functions.
 		"""
+		self.SetCurrent()
 		# create device context (needed on Windows, noop on X)
 		dc = wx.PaintDC(self)
 		self.lock()
-		self.SetCurrent()
 
 		# check if gl was initialized
 		if not self._gl_init_flag:

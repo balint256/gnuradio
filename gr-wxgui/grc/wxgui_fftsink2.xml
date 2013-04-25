@@ -24,7 +24,13 @@ fftsink2.$(type.fcn)(
 	average=$average,
 	avg_alpha=#if $avg_alpha() then $avg_alpha else 'None'#,
 	title=$title,
-	peak_hold=$peak_hold,
+	peak_hold=$peak_hold,#slurp
+#if $threshold_level() != float('inf')
+	threshold_level=$threshold_level,#slurp
+#end if
+#if $freq_of_interest() != float('inf')
+	freq_of_interest=$freq_of_interest,#slurp
+#end if
 #if $win()
 	win=$win,
 #end if
@@ -45,6 +51,8 @@ self.$(id).set_callback($(id)_callback)
 #end if</make>
 	<callback>set_baseband_freq($baseband_freq)</callback>
 	<callback>set_sample_rate($samp_rate)</callback>
+	<callback>set_threshold_level($threshold_level)</callback>
+	<callback>set_freq_of_interest($freq_of_interest)</callback>
 	<param>
 		<name>Type</name>
 		<key>type</key>
@@ -171,6 +179,28 @@ self.$(id).set_callback($(id)_callback)
 		<value>0</value>
 		<type>real</type>
 		<hide>#if $average() == 'True' then 'none' else 'all'#</hide>
+	</param>
+	<param>
+		<name>Threshold Level</name>
+		<key>threshold_level</key>
+		<value>float('inf')</value>
+		<type>real</type>
+		<hide>#if $threshold_level() == float('inf') then 'part' else 'none'#</hide>
+		<option>
+			<name>Not Shown</name>
+			<key>float('inf')</key>
+		</option>
+	</param>
+	<param>
+		<name>Freq of Interest</name>
+		<key>freq_of_interest</key>
+		<value>float('inf')</value>
+		<type>real</type>
+		<hide>#if $threshold_level() == float('inf') then 'part' else 'none'#</hide>
+		<option>
+			<name>Not Shown</name>
+			<key>float('inf')</key>
+		</option>
 	</param>
 	<param>
 		<name>Window</name>
