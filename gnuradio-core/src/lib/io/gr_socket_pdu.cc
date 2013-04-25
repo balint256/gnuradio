@@ -150,8 +150,9 @@ void gr_socket_pdu::udp_send(pmt::pmt_t msg){
     pmt::pmt_t vector = pmt::pmt_cdr(msg);
     size_t len = pmt::pmt_length(vector);
     size_t offset(0);
-    boost::array<char, 10000> txbuf;
-    memcpy(&txbuf[0], pmt::pmt_uniform_vector_elements(vector, offset), len);
+    const size_t txbuf_size = 10000;
+    boost::array<char, txbuf_size> txbuf;
+    memcpy(&txbuf[0], pmt::pmt_uniform_vector_elements(vector, offset), std::min(txbuf_size, len));
     if(_udp_endpoint_other.address().to_string() != "0.0.0.0")
         _udp_socket->send_to(boost::asio::buffer(txbuf,len), _udp_endpoint_other);
 }
