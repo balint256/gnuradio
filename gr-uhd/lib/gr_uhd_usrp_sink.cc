@@ -58,7 +58,7 @@ public:
         ),
         _stream_args(stream_args),
         _nchan(std::max<size_t>(1, stream_args.channels.size())),
-        _stream_now(_nchan == 1),
+        _stream_now(_nchan == 1/*true*/),	// Force 'true' to skip multi-channel time-alignment
         _start_time_set(false),
 		_in_burst(false)
     {
