@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2004,2009,2010 Free Software Foundation, Inc.
+ * Copyright 2004,2009,2010,2013 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <gr_block_registry.h>
+#include <gr_prefs.h>
 
 gr_block::gr_block (const std::string &name,
                     gr_io_signature_sptr input_signature,
@@ -49,6 +50,52 @@ gr_block::gr_block (const std::string &name,
     d_min_output_buffer(std::max(output_signature->max_streams(),1), -1)
 {
     global_block_registry.register_primitive(alias(), this);
+
+#ifdef ENABLE_GR_LOG
+#ifdef HAVE_LOG4CPP
+    gr_prefs *p = gr_prefs::singleton();
+    std::string config_file = p->get_string("LOG", "log_config", "");
+    std::string log_level = p->get_string("LOG", "log_level", "off");
+    std::string log_file = p->get_string("LOG", "log_file", "");
+    std::string debug_level = p->get_string("LOG", "debug_level", "off");
+    std::string debug_file = p->get_string("LOG", "debug_file", "");
+
+    GR_CONFIG_LOGGER(config_file);
+
+    GR_LOG_GETLOGGER(LOG, "gr_log." + alias());
+    GR_LOG_SET_LEVEL(LOG, log_level);
+    if(log_file.size() > 0) {
+      if(log_file == "stdout") {
+        GR_LOG_ADD_CONSOLE_APPENDER(LOG, "cout","gr::log :%p: %c{1} - %m%n");
+      }
+      else if(log_file == "stderr") {
+        GR_LOG_ADD_CONSOLE_APPENDER(LOG, "cerr","gr::log :%p: %c{1} - %m%n");
+      }
+      else {
+        GR_LOG_ADD_FILE_APPENDER(LOG, log_file , true,"%r :%p: %c{1} - %m%n");
+      }
+    }
+    d_logger = LOG;
+
+    GR_LOG_GETLOGGER(DLOG, "gr_log_debug." + alias());
+    GR_LOG_SET_LEVEL(DLOG, debug_level);
+    if(debug_file.size() > 0) {
+      if(debug_file == "stdout") {
+        GR_LOG_ADD_CONSOLE_APPENDER(DLOG, "cout","gr::debug :%p: %c{1} - %m%n");
+      }
+      else if(debug_file == "stderr") {
+        GR_LOG_ADD_CONSOLE_APPENDER(DLOG, "cerr", "gr::debug :%p: %c{1} - %m%n");
+      }
+      else {
+        GR_LOG_ADD_FILE_APPENDER(DLOG, debug_file, true, "%r :%p: %c{1} - %m%n");
+      }
+    }
+    d_debug_logger = DLOG;
+#endif /* HAVE_LOG4CPP */
+#else /* ENABLE_GR_LOG */
+    d_logger = NULL;
+    d_debug_logger = NULL;
+#endif /* ENABLE_GR_LOG */
 }
 
 gr_block::~gr_block ()
@@ -191,7 +238,7 @@ void
 gr_block::remove_item_tag(unsigned int which_input,
 		       const gr_tag_t &tag)
 {
-  d_detail->remove_item_tag(which_input, tag);
+  d_detail->remove_item_tag(which_input, tag, unique_id());
 }
 
 void
@@ -199,7 +246,7 @@ gr_block::get_tags_in_range(std::vector<gr_tag_t> &v,
 			    unsigned int which_output,
 			    uint64_t start, uint64_t end)
 {
-  d_detail->get_tags_in_range(v, which_output, start, end);
+  d_detail->get_tags_in_range(v, which_output, start, end, unique_id());
 }
 
 void
@@ -208,7 +255,7 @@ gr_block::get_tags_in_range(std::vector<gr_tag_t> &v,
 			    uint64_t start, uint64_t end,
 			    const pmt::pmt_t &key)
 {
-  d_detail->get_tags_in_range(v, which_output, start, end, key);
+  d_detail->get_tags_in_range(v, which_output, start, end, key, unique_id());
 }
 
 gr_block::tag_propagation_policy_t
@@ -253,7 +300,7 @@ gr_block::is_set_max_noutput_items()
 }
 
 void
-gr_block::set_processor_affinity(const std::vector<unsigned int> &mask)
+gr_block::set_processor_affinity(const std::vector<int> &mask)
 {
   d_affinity = mask;
   if(d_detail) {

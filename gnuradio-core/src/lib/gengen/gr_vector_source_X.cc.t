@@ -30,8 +30,7 @@
 #include <gr_io_signature.h>
 #include <stdexcept>
 
-
-@NAME@::@NAME@ (const std::vector<@TYPE@> &data, bool repeat, int vlen)
+@NAME@::@NAME@ (const std::vector<@TYPE@> &data, bool repeat, int vlen, const std::vector<gr_tag_t> &tags)
   : gr_sync_block ("@BASE_NAME@",
 	       gr_make_io_signature (0, 0, 0),
 	       gr_make_io_signature (1, 1, sizeof (@TYPE@) * vlen)),
@@ -39,16 +38,24 @@
     d_repeat (repeat),
     d_offset (0),
 	d_new(false),
-    d_vlen (vlen)
+    d_vlen (vlen),
+    d_tags (tags),
+    d_tagpos (0)
 {
+  if (tags.size() == 0) {
+    d_settags = 0;
+  } else {
+    d_settags = 1;
+    set_output_multiple(data.size() / vlen);
+  }
   if ((data.size() % vlen) != 0)
     throw std::invalid_argument("data length must be a multiple of vlen");
 }
 
-void @NAME@::set_data(const std::vector<@TYPE@> &data)
-{
+void
+@NAME@::set_data (const std::vector<@TYPE@> &data, const std::vector<gr_tag_t> &tags){
   gruel::scoped_lock guard(d_mutex);
-  
+
   if (d_offset == 0)
   {
 	d_data = data;
@@ -57,6 +64,14 @@ void @NAME@::set_data(const std::vector<@TYPE@> &data)
   {
     d_data_new = data;
 	d_new = true;
+  }
+
+  d_tags = tags;
+  //rewind();
+  if (tags.size() == 0) {
+    d_settags = false;
+  } else {
+    d_settags = true;
   }
 }
 
@@ -73,44 +88,58 @@ int
 	gruel::scoped_lock guard(d_mutex);
 	
     unsigned int offset = d_offset;
-
     if (size == 0)
       return -1;
 
-    for (int i = 0; i < noutput_items*d_vlen; i++){
-      optr[i] = d_data[offset++];
-      if (offset >= size)
-	  {
-		offset = 0;
-		
-		if (d_new)
-		{
-		  d_data = d_data_new;
-		  d_new = false;
-		}
-	  }
+    if (d_settags) {
+	    int n_outputitems_per_vector = d_data.size() / d_vlen;
+	    for (int i = 0; i < noutput_items; i += n_outputitems_per_vector) {
+		    // FIXME do proper vector copy
+		    memcpy((void *) optr, (const void *) &d_data[0], size * sizeof (@TYPE@));
+		    optr += size;
+		    for (unsigned t = 0; t < d_tags.size(); t++) {
+			    add_item_tag(0, nitems_written(0)+i+d_tags[t].offset, d_tags[t].key, d_tags[t].value);
+		    }
+	    }
+    } else {
+	    for (int i = 0; i < noutput_items*d_vlen; i++){
+		    optr[i] = d_data[offset++];
+		    if (offset >= size) {
+			    offset = 0;
+				
+				if (d_new)
+				{
+				  d_data = d_data_new;
+				  d_new = false;
+				}
+		    }
+	    }
     }
+
+
     d_offset = offset;
     return noutput_items;
-  }
-
-  else {
+  } else {
     if (d_offset >= d_data.size ())
       return -1;			// Done!
 
     unsigned n = std::min ((unsigned) d_data.size () - d_offset,
-			   (unsigned) noutput_items*d_vlen);
-    for (unsigned i = 0; i < n; i++)
+                           (unsigned) noutput_items*d_vlen);
+    for (unsigned i = 0; i < n; i++) {
       optr[i] = d_data[d_offset + i];
-
+    }
+    for (unsigned t = 0; t < d_tags.size(); t++) {
+      if ((d_tags[t].offset >= d_offset) && (d_tags[t].offset < d_offset+n))
+        add_item_tag(0, d_tags[t].offset, d_tags[t].key, d_tags[t].value);
+    }
     d_offset += n;
     return n/d_vlen;
   }
 }
 
 @NAME@_sptr
-gr_make_@BASE_NAME@ (const std::vector<@TYPE@> &data, bool repeat, int vlen)
+gr_make_@BASE_NAME@ (const std::vector<@TYPE@> &data, bool repeat, int vlen, const std::vector<gr_tag_t> &tags)
 {
-  return gnuradio::get_initial_sptr(new @NAME@ (data, repeat, vlen));
+  return gnuradio::get_initial_sptr(new @NAME@ (data, repeat, vlen, tags));
 }
 

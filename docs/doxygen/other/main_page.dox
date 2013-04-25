@@ -39,11 +39,13 @@ More details on packages in GNU Radio:
 \li \ref page_vocoder
 
 More details on GNU Radio concepts:
+\li \ref page_logger
 \li \ref page_pmt
 \li \ref page_msg_passing
 \li \ref page_metadata
 \li \ref volk_guide
 \li \ref page_pfb
+\li \ref page_tagged_stream_blocks
 
 
 \section flowgraph Operating a Flowgraph

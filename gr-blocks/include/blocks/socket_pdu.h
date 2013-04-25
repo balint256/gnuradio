@@ -31,7 +31,7 @@ namespace gr {
 
     /*!
      * \brief Creates socket interface and translates traffic to PDUs
-     * \ingroup net_blk
+     * \ingroup networking_tools_blk
      */
     class BLOCKS_API socket_pdu : virtual public gr_block
     {
@@ -41,7 +41,9 @@ namespace gr {
 
       /*!
        * \brief Construct a SOCKET PDU interface
-       * \param dev Device name to create
+       * \param type type of socket (TCP_SERVER, TCP_CLIENT, UDP_SERVER, UDP_CLIENT)
+       * \param addr address of host
+       * \param port port number to use
        * \param MTU Maximum Transmission Unit size
        */
       static sptr make(std::string type, std::string addr, std::string port, int MTU=10000);

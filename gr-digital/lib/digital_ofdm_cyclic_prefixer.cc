@@ -24,157 +24,139 @@
 #include "config.h"
 #endif
 
+#include <cmath>
 #include <digital_ofdm_cyclic_prefixer.h>
 #include <gr_io_signature.h>
-#include "stdio.h"
 
 digital_ofdm_cyclic_prefixer_sptr
-digital_make_ofdm_cyclic_prefixer (size_t input_size, size_t output_size, const std::vector<float> &window)
+digital_make_ofdm_cyclic_prefixer (size_t input_size,
+		                   size_t output_size,
+				   int rolloff_len,
+				   const std::string &len_tag_key)
 {
   return gnuradio::get_initial_sptr(new digital_ofdm_cyclic_prefixer (input_size,
-								      output_size, window));
+								      output_size,
+								      rolloff_len,
+								      len_tag_key));
 }
 
 digital_ofdm_cyclic_prefixer::digital_ofdm_cyclic_prefixer (size_t input_size,
-							    size_t output_size, const std::vector<float> &window)
-  : gr_sync_interpolator ("ofdm_cyclic_prefixer",
-			  gr_make_io_signature (1, 1, input_size*sizeof(gr_complex)),
-			  gr_make_io_signature (1, 1, sizeof(gr_complex)),
-			  output_size), 
-    d_input_size(input_size),
+							    size_t output_size,
+							    int rolloff_len,
+							    const std::string &len_tag_key)
+  : gr_tagged_stream_block ("ofdm_cyclic_prefixer",
+		  gr_make_io_signature (1, 1, input_size*sizeof(gr_complex)),
+		  gr_make_io_signature (1, 1, sizeof(gr_complex)),
+		  len_tag_key),
+    d_fft_len(input_size),
     d_output_size(output_size),
-    d_window(window),
-    d_buffer(NULL)
+    d_cp_size(output_size - input_size),
+    d_rolloff_len(rolloff_len),
+    d_up_flank((rolloff_len ? rolloff_len-1 : 0), 0),
+    d_down_flank((rolloff_len ? rolloff_len-1 : 0), 0),
+    d_delay_line(0, 0)
 {
-fprintf(stderr, "[%s<%i>] Input: %i, Output: %i, Window length: %i\n", name().c_str(), unique_id(), input_size, output_size, window.size());
-	//set_history(1 + (window.size() / 2));
-	if (window.size() > 0)
-	{
-		const int buffer_size = window.size() / 2;
-		d_buffer = new gr_complex[buffer_size];
-		memset(d_buffer, 0x00, sizeof(gr_complex) * buffer_size);
-	}
-}
+  set_relative_rate(d_output_size);
 
-digital_ofdm_cyclic_prefixer::~digital_ofdm_cyclic_prefixer()
-{
-	if (d_buffer)
-		delete [] d_buffer;
-}
+  // Flank of length 1 would just be rectangular
+  if (d_rolloff_len == 1) {
+    d_rolloff_len = 0;
+  }
+  if (d_rolloff_len) {
+    d_delay_line.resize(d_rolloff_len-1, 0);
+    if (rolloff_len > d_cp_size) {
+      throw std::invalid_argument("cyclic prefixer: rolloff len must smaller than the cyclic prefix.");
+    }
+    // The actual flanks are one sample shorter than d_rolloff_len, because the
+    // first sample of the up- and down flank is always zero and one, respectively
+    for (int i = 1; i < d_rolloff_len; i++) {
+      d_up_flank[i-1]   = 0.5 * (1 + cos(M_PI * i/rolloff_len - M_PI));
+      d_down_flank[i-1] = 0.5 * (1 + cos(M_PI * (rolloff_len-i)/rolloff_len - M_PI));
+    }
+  }
 
-//static unsigned char _b[1024];	// 128
-//static int z = 0;
+  if (len_tag_key.empty()) {
+    set_output_multiple(d_output_size);
+  } else {
+    set_tag_propagation_policy(TPP_DONT);
+  }
+}
 
 int
-digital_ofdm_cyclic_prefixer::work (int noutput_items,
-				    gr_vector_const_void_star &input_items,
-				    gr_vector_void_star &output_items)
+digital_ofdm_cyclic_prefixer::calculate_output_stream_length(const gr_vector_int &ninput_items)
 {
-	assert(noutput_items == input_size);
+  int nout = ninput_items[0] * d_output_size + d_delay_line.size();
+  return nout;
+}
 
+// Operates in two ways:
+// - When there's a length tag name specified, operates in packet mode.
+//   Here, an entire OFDM frame is processed at once. The final OFDM symbol
+//   is postfixed with the delay line of the pulse shape.
+//   We manually propagate tags.
+// - Otherwise, we're in freewheeling mode. Process as many OFDM symbols as
+//   are space for in the output buffer. The delay line is never flushed.
+//   Tags are propagated by the scheduler.
+int
+digital_ofdm_cyclic_prefixer::work (int noutput_items,
+                       gr_vector_int &ninput_items,
+                       gr_vector_const_void_star &input_items,
+                       gr_vector_void_star &output_items)
+{
   gr_complex *in = (gr_complex *) input_items[0];
   gr_complex *out = (gr_complex *) output_items[0];
-  const size_t cp_size = d_output_size - d_input_size;
-  unsigned int i=0, j=0;
+  int symbols_to_read = 0;
 
-	if (d_window.size() == 0)
-	{
-  j = cp_size;
-  for(i=0; i < d_input_size; i++,j++) {
-    out[j] = in[i];
+  // 1) Figure out if we're in freewheeling or packet mode
+  if (!d_length_tag_key_str.empty()) {
+    symbols_to_read = ninput_items[0];
+    noutput_items = symbols_to_read * d_output_size + d_delay_line.size();
+  } else {
+    symbols_to_read = std::min(noutput_items / (int) d_output_size, ninput_items[0]);
+    noutput_items = symbols_to_read * d_output_size;
   }
 
-  j = d_input_size - cp_size;
-  for(i=0; i < cp_size; i++, j++) {
-    out[i] = in[j];
+  // 2) Do the cyclic prefixing and, optionally, the pulse shaping
+  for (int sym_idx = 0; sym_idx < symbols_to_read; sym_idx++) {
+    memcpy((void *)(out + d_cp_size), (void *) in, d_fft_len * sizeof(gr_complex));
+    memcpy((void *) out, (void *) (in + d_fft_len - d_cp_size), d_cp_size * sizeof(gr_complex));
+    if (d_rolloff_len) {
+      for (int i = 0; i < d_rolloff_len-1; i++) {
+	out[i] = out[i] * d_up_flank[i] + d_delay_line[i];
+	d_delay_line[i] = in[i] * d_down_flank[i];
+      }
+    }
+    in += d_fft_len;
+    out += d_output_size;
   }
-	}
-	else
-	{
-	//if (memcmp((void*)_b, (void*)in, d_window.size()/2 * sizeof(gr_complex)) != 0)
-	//	fprintf(stderr, "! ");
 
-	//const int history_offset = d_window.size() / 2;
-	const int offset = d_window.size() / 2;
-	//const int offset = d_window.size() % 2;
-	
-	// Combine end of last FFT with a bit more (earlier) part of this CP)
-/*	for (i = 0, j = d_window.size()/2; j < d_window.size(); i++, j++)
-	{
-		out[i] = (in[i] * (z ? 0 : d_window[j])) + ((z ? d_window[i] : 0) * in[(history_offset + d_input_size) - (cp_size + d_window.size()/2) + i]);
-		if (z == 0)
-			out[i] = gr_complex(out[i].imag(), out[i].real());
-		//out[i] = in[i];
-		//out[i] = gr_complex(0,0);
-	}
-*/	
-/*	for (i = 0, j = d_window.size()/2; j < d_window.size(); i++, j++)
-	{
-		//out[i] = (d_buffer[i] * (z ? 0 : d_window[j])) + ((z ? d_window[i] : 0) * in[d_input_size - (cp_size + d_window.size()/2) + i]);
-		out[i] = (d_buffer[i] * d_window[j]) + (d_window[i] * in[d_input_size - (cp_size + d_window.size()/2) + i]);
-		//if (z == 0)
-		//	out[i] = gr_complex(out[i].imag(), out[i].real());
-	}
-*/
-	for (i = 0; i < d_window.size()/2; i++)
-	{
-		out[i] = d_window[i] * in[d_input_size - cp_size + i] + d_window[offset + i] * d_buffer[i];
-	}
+  // 3) If we're in packet mode:
+  //    - flush the delay line, if applicable
+  //    - Propagate tags
+  if (!d_length_tag_key_str.empty()) {
+    if (d_rolloff_len) {
+      for (unsigned i = 0; i < d_delay_line.size(); i++) {
+	*out++ = d_delay_line[i];
+      }
+      d_delay_line.assign(d_delay_line.size(), 0);
+    }
+    std::vector<gr_tag_t> tags;
+    get_tags_in_range(
+	tags, 0,
+	nitems_read(0), nitems_read(0)+symbols_to_read
+    );
+    for (unsigned i = 0; i < tags.size(); i++) {
+      tags[i].offset = ((tags[i].offset - nitems_read(0)) * d_output_size) + nitems_written(0);
+      add_item_tag(0,
+	  tags[i].offset,
+	  tags[i].key,
+	  tags[i].value
+      );
+    }
+  } else {
+    consume_each(symbols_to_read);
+  }
 
-	// Copy this CP
-/*	for (j = d_input_size - cp_size; j < d_input_size; i++, j++)
-	{
-		out[i] = (z ? in[history_offset + j] : 0);
-		//out[i] = gr_complex(0.2,0.2);
-	}
-*//*	for (j = d_input_size - cp_size; j < d_input_size; i++, j++)
-	{
-		out[i] = in[j];
-	}
-*/	for (j = d_input_size - cp_size + offset; j < d_input_size; j++, i++)
-	{
-		out[i] = in[j];
-	}
-	/*for (j = d_input_size - cp_size; j < d_input_size - cp_size + d_window.size()/2; i++, j++)
-	{
-		out[i] = in[history_offset + j] * d_window[j - (d_input_size - cp_size)];
-		//out[i] = gr_complex(0.2,0.2);
-	}
-	for (; j < d_input_size; i++, j++)
-	{
-		out[i] = in[history_offset + j];
-		//out[i] = gr_complex(0.2,0.2);
-	}*/
-	
-	// Copy most of the FFT (rest will be in history for next iteration)
-/*	for (j=0; i < d_output_size; ++i, ++j)
-	{
-		out[i] = (z ? -in[history_offset + j] : 0);
-	}
-*//*	for (j=0; i < d_output_size; ++i, ++j)
-	{
-		out[i] = in[j];
-	}
-*/	for (j = 0; i < d_output_size; ++i, ++j)
-	{
-		out[i] = in[j];
-	}
-	assert(j == d_input_size);
-	//memcpy(d_buffer, &in[d_input_size - d_window.size()/2], d_window.size()/2 * sizeof(gr_complex));
-	memcpy(d_buffer, in, d_window.size()/2 * sizeof(gr_complex));
-//memcpy(_b, (void*)&in[history_offset + d_input_size - d_window.size()/2], d_window.size()/2 * sizeof(gr_complex));
-	/*for (j=0; i < d_output_size - (d_window.size()/2); ++i, ++j)
-	{
-		out[i] = in[history_offset + j];
-		//out[i] = gr_complex(0.7,0.7);
-	}
-	for (int n = 0; i < d_output_size; ++i, ++j, ++n)
-	{
-		out[i] = in[history_offset + j] * d_window[(d_window.size() / 2) + n];
-		out[i] = in[history_offset + j];
-		//out[i] = gr_complex(1,1);
-	}*/
-	}
-	//z = (z ? 0 : 1);
-  return d_output_size;
+  return noutput_items;
 }
+

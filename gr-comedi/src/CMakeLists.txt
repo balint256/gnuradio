@@ -33,6 +33,9 @@ link_directories(
 	${COMEDI_LIBRARY_DIRS}
 )
 
+include_directories(${LOG4CPP_INCLUDE_DIRS})
+link_directories(${LOG4CPP_LIBRARY_DIRS})
+
 ########################################################################
 # Setup library
 ########################################################################
@@ -46,6 +49,7 @@ list(APPEND comedi_libs
     gnuradio-core
     ${Boost_LIBRARIES}
     ${COMEDI_LIBRARIES}
+    ${LOG4CPP_LIBRARIES}
 )
 
 add_library(gnuradio-comedi SHARED ${gr_comedi_sources})

@@ -50,7 +50,6 @@ class test_peak_detector2(gr_unittest.TestCase):
         tb.run()
 
         dst_data = dst.data()
-        print dst_data
 
         self.assertEqual(expected_result, dst_data)
 

@@ -208,3 +208,46 @@ function(GR_GEN_TARGET_DEPS name var)
         set(${var} "DEPENDS;${name};COMMAND;${name}" PARENT_SCOPE)
     endif()
 endfunction(GR_GEN_TARGET_DEPS)
+
+
+########################################################################
+# Control use of gr_logger
+# Usage:
+#   GR_LOGGING()
+#
+# Will set ENABLE_GR_LOG to 1 by default.
+# Can manually set with -DENABLE_GR_LOG=0|1
+########################################################################
+function(GR_LOGGING)
+  find_package(Log4cpp)
+
+  OPTION(ENABLE_GR_LOG "Use gr_logger" ON)
+  if(ENABLE_GR_LOG)
+    # If gr_logger is enabled, make it usable
+    add_definitions( -DENABLE_GR_LOG )
+
+    # also test LOG4CPP; if we have it, use this version of the logger
+    # otherwise, default to the stdout/stderr model.
+    if(LOG4CPP_FOUND)
+      SET(HAVE_LOG4CPP True)
+      add_definitions( -DHAVE_LOG4CPP )
+    else(LOG4CPP_FOUND)
+      SET(HAVE_LOG4CPP False)
+      SET(LOG4CPP_INCLUDE_DIRS "")
+      SET(LOG4CPP_LIBRARY_DIRS "")
+      SET(LOG4CPP_LIBRARIES "")
+    endif(LOG4CPP_FOUND)
+
+    SET(ENABLE_GR_LOG ${ENABLE_GR_LOG} CACHE INTERNAL "" FORCE)
+
+  else(ENABLE_GR_LOG)
+    SET(HAVE_LOG4CPP False)
+    SET(LOG4CPP_INCLUDE_DIRS)
+    SET(LOG4CPP_LIBRARY_DIRS)
+    SET(LOG4CPP_LIBRARIES)
+  endif(ENABLE_GR_LOG)
+
+  message(STATUS "ENABLE_GR_LOG set to ${ENABLE_GR_LOG}.")
+  message(STATUS "HAVE_LOG4CPP set to ${HAVE_LOG4CPP}.")
+
+endfunction(GR_LOGGING)

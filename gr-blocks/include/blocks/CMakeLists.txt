@@ -73,12 +73,14 @@ expand_h(argmax_XX          fs is ss)
 expand_h(divide_XX          ss ii ff cc)
 expand_h(integrate_XX       ss ii ff cc)
 expand_h(max_XX             ff ii ss)
+expand_h(moving_average_XX  ss ii ff cc)
 expand_h(multiply_XX        ss ii)
 expand_h(multiply_const_XX  ss ii)
 expand_h(multiply_const_vXX ss ii ff cc)
 expand_h(mute_XX            ss ii ff cc)
 expand_h(not_XX             bb ss ii)
 expand_h(or_XX              bb ss ii)
+expand_h(peak_detector_XX   fb ib sb)
 expand_h(probe_signal_X     b s i f c)
 expand_h(probe_signal_vX    b s i f c)
 expand_h(sample_and_hold_XX bb ss ii ff)
@@ -86,6 +88,9 @@ expand_h(sub_XX             ss ii ff cc)
 expand_h(xor_XX             bb ss ii)
 expand_h(packed_to_unpacked_XX bb ss ii)
 expand_h(unpacked_to_packed_XX bb ss ii)
+expand_h(vector_insert_X    b s i f c)
+expand_h(vector_sink_X      b s i f c)
+expand_h(vector_source_X    b s i f c)
 
 add_custom_target(blocks_generated_includes DEPENDS
     ${generated_includes}
@@ -97,11 +102,23 @@ add_custom_target(blocks_generated_includes DEPENDS
 install(FILES
     ${generated_includes}
     api.h
+    control_loop.h
     count_bits.h
+    file_sink_base.h
+    lfsr_15_1_0.h
+    lfsr_32k.h
     log2_const.h
+    rotator.h
+    wavfile.h
     add_ff.h
+    annotator_1to1.h
+    annotator_alltoall.h
+    annotator_raw.h
+    bin_statistics_f.h
+    burst_tagger.h
     char_to_float.h
     char_to_short.h
+    check_lfsr_32k_s.h
     complex_to_interleaved_short.h
     complex_to_float.h
     complex_to_imag.h
@@ -110,8 +127,13 @@ install(FILES
     complex_to_mag_squared.h
     complex_to_arg.h
     conjugate_cc.h
+    copy.h
     deinterleave.h
     delay.h
+    endian_swap.h
+    file_descriptor_sink.h
+    file_descriptor_source.h
+    file_sink.h
     file_source.h
     file_meta_sink.h
     file_meta_source.h
@@ -120,28 +142,42 @@ install(FILES
     float_to_int.h
     float_to_short.h
     float_to_uchar.h
+    head.h
     int_to_float.h
     interleave.h
     interleaved_short_to_complex.h
     keep_m_in_n.h
     keep_one_in_n.h
+    lfsr_32k_source_s.h
+    message_debug.h
+    message_sink.h
+    message_source.h
+    message_strobe.h
+    message_burst_source.h
     multiply_cc.h
     multiply_ff.h
     multiply_conjugate_cc.h
     multiply_const_cc.h
     multiply_const_ff.h
     nlog10_ff.h
+    nop.h
+    null_sink.h
+    null_source.h
     pack_k_bits_bb.h
     patterned_interleaver.h
     pdu.h
     pdu_to_tagged_stream.h
     peak_detector2_fb.h
+    plateau_detector_fb.h
+    probe_rate.h
     regenerate_bb.h
+    repack_bits_bb.h 
     repeat.h
     rms_cf.h
     rms_ff.h
     short_to_char.h
     short_to_float.h
+    skiphead.h
     socket_pdu.h
     stream_mux.h
     stream_to_streams.h
@@ -149,15 +185,24 @@ install(FILES
     streams_to_stream.h
     streams_to_vector.h
     stretch_ff.h
+    tag_debug.h
+    tagged_file_sink.h
+    tagged_stream_mux.h
     tagged_stream_to_pdu.h
     threshold_ff.h
     throttle.h
     transcendental.h
     tuntap_pdu.h
     uchar_to_float.h
+    udp_sink.h
+    udp_source.h
     unpack_k_bits_bb.h
+    vco_f.h
+    vector_map.h
     vector_to_stream.h
     vector_to_streams.h
+    wavfile_sink.h
+    wavfile_source.h
     DESTINATION ${GR_INCLUDE_DIR}/gnuradio/blocks
     COMPONENT "blocks_devel"
 )

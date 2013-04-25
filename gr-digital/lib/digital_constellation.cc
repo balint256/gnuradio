@@ -77,6 +77,10 @@ digital_constellation::digital_constellation () :
   calc_arity();
 }
 
+digital_constellation::~digital_constellation()
+{
+}
+
 //! Returns the constellation points for a symbol value
 void
 digital_constellation::map_to_points(unsigned int value, gr_complex *points)
@@ -345,6 +349,37 @@ digital_constellation_rect::calc_sector_value (unsigned int sector)
   return closest_point;
 }
 
+digital_constellation_expl_rect_sptr 
+digital_make_constellation_expl_rect(
+    std::vector<gr_complex> constellation,
+    std::vector<unsigned int> pre_diff_code,
+    unsigned int rotational_symmetry,
+    unsigned int real_sectors,
+    unsigned int imag_sectors,
+    float width_real_sectors,
+    float width_imag_sectors,
+    std::vector<unsigned int> sector_values
+)
+{
+  return digital_constellation_expl_rect_sptr(
+    new digital_constellation_expl_rect(
+      constellation, pre_diff_code, rotational_symmetry, real_sectors, imag_sectors,
+      width_real_sectors, width_imag_sectors, sector_values));
+}
+
+digital_constellation_expl_rect::digital_constellation_expl_rect (
+    std::vector<gr_complex> constellation,
+    std::vector<unsigned int> pre_diff_code,
+    unsigned int rotational_symmetry,
+    unsigned int real_sectors,
+    unsigned int imag_sectors,
+    float width_real_sectors,
+    float width_imag_sectors,
+    std::vector<unsigned int> sector_values
+  ) : digital_constellation_rect(
+    constellation, pre_diff_code, rotational_symmetry, real_sectors, imag_sectors,
+    width_real_sectors, width_imag_sectors),
+    d_sector_values(sector_values) {};
 
 digital_constellation_psk_sptr 
 digital_make_constellation_psk(std::vector<gr_complex> constellation, 

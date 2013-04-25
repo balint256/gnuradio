@@ -33,7 +33,7 @@ namespace gr {
 
     /*!
      * \brief output = input or zero if muted.
-     * \ingroup level_blk
+     * \ingroup level_controllers_blk
      */
     class BLOCKS_API @NAME@ : virtual public gr_sync_block
     {
@@ -41,10 +41,10 @@ namespace gr {
       // gr::blocks::@NAME@::sptr
       typedef boost::shared_ptr<@NAME@> sptr;
 
-      static sptr make(bool mute);
+      static sptr make(bool mute=false);
 
       virtual bool mute() const = 0;
-      virtual void set_mute(bool mute) = 0;
+      virtual void set_mute(bool mute=false) = 0;
     };
 
   } /* namespace blocks */

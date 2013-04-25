@@ -44,6 +44,7 @@ GR_REGISTER_COMPONENT("gnuradio-core" ENABLE_GR_CORE
 )
 
 include(GrMiscUtils)
+
 GR_SET_GLOBAL(GNURADIO_CORE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/runtime
     ${CMAKE_CURRENT_BINARY_DIR}/src/lib/general
@@ -59,13 +60,17 @@ GR_SET_GLOBAL(GNURADIO_CORE_INCLUDE_DIRS
     ${CMAKE_CURRENT_BINARY_DIR}/src/lib/swig
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/swig
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/hier
+    ${CMAKE_BINARY_DIR}
 )
+
+list(APPEND GNURADIO_CORE_INCLUDE_DIRS ${CMAKE_BINARY_DIR})
 
 GR_SET_GLOBAL(GNURADIO_CORE_SWIG_INCLUDE_DIRS
     ${GNURADIO_CORE_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lib/swig
     ${CMAKE_SOURCE_DIR}/gruel/src/swig
     ${CMAKE_BINARY_DIR}/gruel/src/swig
+    ${CMAKE_BINARY_DIR}
 )
 
 ########################################################################
@@ -107,11 +112,25 @@ CPACK_COMPONENT("core_swig"
     DEPENDS      "gruel_swig;core_python;core_devel"
 )
 
+# Setup configure file
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gnuradio-core.conf.in
+    ${CMAKE_CURRENT_BINARY_DIR}/gnuradio-core.conf
+@ONLY)
+
 install(
-    FILES gnuradio-core.conf
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/gnuradio-core.conf
     DESTINATION ${GR_PREFSDIR}
     COMPONENT "core_runtime"
 )
+
+if(ENABLE_GR_LOG AND HAVE_LOG4CPP)
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/gr_log_default.xml
+    DESTINATION ${GR_CONF_DIR}/gnuradio
+    COMPONENT "core_runtime"
+)
+endif(ENABLE_GR_LOG AND HAVE_LOG4CPP)
 
 ########################################################################
 # Add subdirectories

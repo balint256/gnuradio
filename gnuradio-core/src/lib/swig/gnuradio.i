@@ -38,16 +38,19 @@
 #include <gr_types.h>
 #include <stddef.h>		// size_t
 #include <complex>
+#include <string.h>
 %}
 
 %feature("autodoc","1");
 
 // local file
 %include <gr_shared_ptr.i>
+%include <gr_types.h>
 %include <std_complex.i>
 %include <std_vector.i>
 %include <stl.i>
 %include <std_except.i>
+%include <std_string.i>
 
 typedef std::complex<float>		gr_complex;
 typedef std::complex<double>		gr_complexd;
@@ -64,7 +67,8 @@ namespace std {
   %template()	  vector<int>;
   %template()	  vector<float>;
   %template()	  vector<double>;
-  // %template()	  std::complex<float>;
+  %template()     vector<std::string>;
+  %template()	  vector<gr_tag_t>;
 
   %template() 	  vector< std::complex<float> >;
   %template()     vector< std::vector< unsigned char > >;
