@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2012,2014 Free Software Foundation, Inc.
+ * Copyright 2009,2010,2012,2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -20,34 +20,38 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef INCLUDED_STREAM_MUX_IMPL_H
-#define INCLUDED_STREAM_MUX_IMPL_H
+#ifndef INCLUDED_FILTER_FILTERBANK_VCVCF_IMPL_H
+#define	INCLUDED_FILTER_FILTERBANK_VCVCF_IMPL_H
 
-#include <gnuradio/blocks/stream_mux.h>
+#include <gnuradio/filter/filterbank_vcvcf.h>
+#include <gnuradio/filter/filterbank.h>
+#include <gnuradio/filter/fir_filter.h>
+#include <gnuradio/thread/thread.h>
 
 namespace gr {
-  namespace blocks {
+  namespace filter {
 
-    class BLOCKS_API stream_mux_impl : public stream_mux
+    class FILTER_API filterbank_vcvcf_impl : public filterbank_vcvcf, kernel::filterbank
     {
     private:
-      size_t d_itemsize;
-      unsigned int d_stream;    // index of currently selected stream
-      int d_residual;           // number if items left to put into current stream
-      gr_vector_int d_lengths;  // number if items to pack per stream
-
-      void forecast(int noutput_items, gr_vector_int &ninput_items_required);
+      bool d_updated;
+      gr::thread::mutex d_mutex; // mutex to protect set/work access
 
     public:
-      stream_mux_impl(size_t itemsize, const std::vector<int> &lengths);
+      filterbank_vcvcf_impl(const std::vector<std::vector<float> > &taps);
+      ~filterbank_vcvcf_impl();
+
+      void set_taps(const std::vector<std::vector<float> > &taps);
+      void print_taps();
+      std::vector<std::vector<float> > taps() const;
 
       int general_work(int noutput_items,
-		       gr_vector_int &ninput_items,
+           gr_vector_int &ninput_items,
 		       gr_vector_const_void_star &input_items,
 		       gr_vector_void_star &output_items);
     };
 
-  } /* namespace blocks */
+  } /* namespace filter */
 } /* namespace gr */
 
-#endif /* INCLUDED_STREAM_MUX_IMPL_H */
+#endif
