@@ -30,7 +30,7 @@ from Param import Param as _Param
 from Generator import Generator
 from Constants import \
     HIER_BLOCKS_LIB_DIR, BLOCK_DTD, \
-    DEFAULT_FLOW_GRAPH, BLOCKS_DIRS
+    DEFAULT_FLOW_GRAPH, BLOCKS_DIRS, PREFS_FILE
 import Constants
 
 COLORS = [(name, color) for name, key, sizeof, color in Constants.CORE_TYPES]
@@ -72,7 +72,11 @@ class Platform(_Platform, _GUIPlatform):
             generator=Generator,
             colors=COLORS,
         )
-        _GUIPlatform.__init__(self)
+
+        _GUIPlatform.__init__(
+            self,
+            prefs_file=PREFS_FILE
+        )
 
     ##############################################
     # Constructors

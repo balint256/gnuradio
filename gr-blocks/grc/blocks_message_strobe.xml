@@ -27,11 +27,16 @@
 	<sink>
 		<name>set_msg</name>
 		<type>message</type>
-        <optional>1</optional>
+		<optional>1</optional>
+	</sink>
+	<sink>
+		<name>trigger</name>
+		<type>message</type>
+		<optional>1</optional>
 	</sink>
 	<source>
 		<name>strobe</name>
 		<type>message</type>
-        <optional>1</optional>
+		<optional>1</optional>
 	</source>
 </block>

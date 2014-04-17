@@ -66,8 +66,13 @@ namespace gr {
         _stream_args(stream_args),
         _nchan(stream_args.channels.size()),
         _stream_now(_nchan == 1),
-        _start_time_set(false)
+        _start_time_set(false),
+        _ignore_samples(false),
+        _send_flush(false),
+        _ignored_sample_count(0)
     {
+      message_port_register_out(MSG_CTL_PORT_ID);
+      
       if(stream_args.cpu_format == "fc32")
         _type = boost::make_shared< ::uhd::io_type_t >(::uhd::io_type_t::COMPLEX_FLOAT32);
       if(stream_args.cpu_format == "sc16")
@@ -475,6 +480,41 @@ namespace gr {
       get_tags_in_range(_tags, 0, samp0_count, samp0_count + ninput_items);
       if(not _tags.empty())
         this->tag_work(ninput_items);
+      
+      if (_metadata.end_of_burst && _send_flush)
+      {
+        //std::cout << "Finishing flush" << std::endl;
+        _send_flush = false;
+      }
+      
+      if (_metadata.end_of_burst && _ignore_samples)
+      {
+        //std::cout << "Will no longer ignore samples" << std::endl;
+        _ignored_sample_count += ninput_items;
+        //std::cout << boost::format("[%s<%d>] Ignored %llu samples") % name() % unique_id() % _ignored_sample_count << std::endl;
+        _ignore_samples = false;
+        return ninput_items;  // Will be 1
+      }
+      
+      if (_send_flush)  // FIXME: Only every (user supplied)
+      {
+        //std::cout << "." << std::flush;
+        pmt::pmt_t msg = pmt::string_to_symbol("flush");
+        message_port_pub(MSG_CTL_PORT_ID, msg);
+      }
+      
+      if (_ignore_samples)
+      {
+        //std::cout << "Dropping " << ninput_items << " samples" << std::endl;
+        _ignored_sample_count += ninput_items;
+        return ninput_items;
+      }
+      
+      if (_ignored_sample_count > 0)
+      {
+        std::cout << boost::format("[%s<%d>] Ignored %llu samples") % name() % unique_id() % _ignored_sample_count << std::endl;
+        _ignored_sample_count = 0;
+      }
 
 #ifdef GR_UHD_USE_STREAM_API
       //send all ninput_items with metadata
@@ -528,6 +568,12 @@ namespace gr {
           break;
         }
 
+        else if(pmt::equal(key, IGNORE_KEY)) {
+          //std::cout << "Ignoring samples" << std::endl;
+          _ignore_samples = true;
+          //_ignored_sample_count = 0;
+        }
+
         //handle end of burst with a mini end of burst packet
         else if(pmt::equal(key, EOB_KEY)) {
           _metadata.end_of_burst = pmt::to_bool(value);
@@ -547,6 +593,11 @@ namespace gr {
             (pmt::to_uint64(pmt::tuple_ref(value, 0)),
              pmt::to_double(pmt::tuple_ref(value, 1)));
         }
+      }
+      
+      if (_metadata.start_of_burst && (_ignore_samples == false)) {
+        //std::cout << "Starting flush..." << std::endl;
+        _send_flush = true;
       }
     }
 

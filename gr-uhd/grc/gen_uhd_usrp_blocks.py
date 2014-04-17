@@ -303,6 +303,11 @@ self.\$(id).set_bandwidth(\$bw$(n), $n)
 		<type>\$type.type</type>
 		<nports>\$nchan</nports>
 	</$sourk>
+	<$msg_ctl>
+		<name>ctl</name>
+		<type>message</type>
+		<optional>1</optional>
+	</$msg_ctl>
 	<doc>
 The UHD USRP $sourk.title() Block:
 
@@ -437,9 +442,11 @@ if __name__ == '__main__':
 	for file in sys.argv[1:]:
 		if file.endswith ('source.xml'):
 			sourk = 'source'
+			msg_ctl = 'sink'
 			direction = 'out'
 		elif file.endswith ('sink.xml'):
 			sourk = 'sink'
+			msg_ctl = 'source'
 			direction = 'in'
 		else: raise Exception, 'is %s a source or sink?'%file
 
@@ -449,5 +456,6 @@ if __name__ == '__main__':
 			max_mboards=max_num_mboards,
 			params=params,
 			sourk=sourk,
+			msg_ctl=msg_ctl,
 			direction=direction,
 		))

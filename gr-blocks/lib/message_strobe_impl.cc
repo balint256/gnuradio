@@ -60,24 +60,47 @@ namespace gr {
       message_port_register_in(pmt::mp("set_msg"));
       set_msg_handler(pmt::mp("set_msg"),
                       boost::bind(&message_strobe_impl::set_msg, this, _1));
+      
+      message_port_register_in(pmt::mp("trigger"));
+      set_msg_handler(pmt::mp("trigger"),
+                      boost::bind(&message_strobe_impl::trigger, this, _1));
     }
 
     message_strobe_impl::~message_strobe_impl()
     {
       d_finished = true;
+      d_cond_var.notify_all();
       d_thread->interrupt();
       d_thread->join();
+    }
+    
+    void message_strobe_impl::trigger(pmt::pmt_t msg)
+    {
+      send_msg();
+    }
+    
+    void message_strobe_impl::send_msg()
+    {
+      boost::mutex::scoped_lock lock(d_mutex);
+      message_port_pub(pmt::mp("strobe"), d_msg);
     }
 
     void message_strobe_impl::run()
     {
       while(!d_finished) {
+        if (d_period_ms <= 0)
+        {
+          boost::mutex::scoped_lock lock(d_mutex);
+          d_cond_var.wait(lock);
+          if (d_finished || (d_period_ms <= 0))
+            continue;
+        }
         boost::this_thread::sleep(boost::posix_time::milliseconds(d_period_ms));
         if(d_finished) {
           return;
         }
 
-        message_port_pub(pmt::mp("strobe"), d_msg);
+        send_msg();
       }
     }
 

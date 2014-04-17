@@ -67,6 +67,7 @@ rpcmanager::register_booter(rpcserver_booter_base* booter)
     booter_registered = true;
   }
   else {
-    throw std::runtime_error("rpcmanager: Aggregator not in use, and a rpc booter is already registered\n");
+    //throw std::runtime_error("rpcmanager: Aggregator not in use, and a rpc booter is already registered\n");
+    std::cerr << "rpcmanager: Aggregator not in use, and a rpc booter is already registered\n";
   }
 }

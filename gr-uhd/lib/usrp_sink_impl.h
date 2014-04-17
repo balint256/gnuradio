@@ -26,6 +26,9 @@
 static const pmt::pmt_t SOB_KEY = pmt::string_to_symbol("tx_sob");
 static const pmt::pmt_t EOB_KEY = pmt::string_to_symbol("tx_eob");
 static const pmt::pmt_t TIME_KEY = pmt::string_to_symbol("tx_time");
+static const pmt::pmt_t IGNORE_KEY = pmt::string_to_symbol("ignore");
+
+static const pmt::pmt_t MSG_CTL_PORT_ID = pmt::string_to_symbol("ctl");
 
 namespace gr {
   namespace uhd {
@@ -127,6 +130,8 @@ namespace gr {
 #endif
       size_t _nchan;
       bool _stream_now;
+      bool _ignore_samples, _send_flush;
+      uint64_t _ignored_sample_count;
       ::uhd::tx_metadata_t _metadata;
       double _sample_rate;
 

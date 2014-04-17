@@ -28,6 +28,7 @@
 #include <cstring>
 #include <stdint.h>
 #include <boost/detail/endian.hpp> //BOOST_BIG_ENDIAN
+#include <iostream>
 
 namespace gr {
   namespace blocks {
@@ -255,6 +256,8 @@ namespace gr {
     {
       uint32_t chunk_size = (uint32_t)byte_count;
       chunk_size = host_to_wav(chunk_size);
+      
+      std::cout << "Completing WAV header: bytes = " << byte_count << ", chunk size = " << chunk_size << std::endl;
 
       if (fseek(fp, 40, SEEK_SET) != 0) {
 	return false;

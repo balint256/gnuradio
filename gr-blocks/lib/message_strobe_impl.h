@@ -24,6 +24,9 @@
 #define INCLUDED_GR_MESSAGE_STROBE_IMPL_H
 
 #include <gnuradio/blocks/message_strobe.h>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 
 namespace gr {
   namespace blocks {
@@ -35,16 +38,20 @@ namespace gr {
       bool d_finished;
       float d_period_ms;
       pmt::pmt_t d_msg;
+      boost::condition_variable d_cond_var;
+      boost::mutex d_mutex;
 
       void run();
+      void trigger(pmt::pmt_t msg);
+      void send_msg();
 
     public:
       message_strobe_impl(pmt::pmt_t msg, float period_ms);
       ~message_strobe_impl();
 
-      void set_msg(pmt::pmt_t msg) { d_msg = msg; }
-      pmt::pmt_t msg() const { return d_msg; }
-      void set_period(float period_ms) { d_period_ms = period_ms; }
+      void set_msg(pmt::pmt_t msg) { boost::mutex::scoped_lock lock(d_mutex); d_msg = msg; }
+      pmt::pmt_t msg() const { /*boost::mutex::scoped_lock lock(d_mutex); */return d_msg; }
+      void set_period(float period_ms) { d_period_ms = period_ms; d_cond_var.notify_all(); }
       float period() const { return d_period_ms; }
     };
 
