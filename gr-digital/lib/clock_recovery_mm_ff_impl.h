@@ -71,6 +71,7 @@ namespace gr {
 
       float d_last_sample;
       filter::mmse_fir_interpolator_ff *d_interp;
+      float d_omega_orig;
 
       bool d_verbose;
     };

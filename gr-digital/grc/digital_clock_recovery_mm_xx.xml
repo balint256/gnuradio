@@ -62,8 +62,28 @@
         <name>in</name>
         <type>$type</type>
     </sink>
+    <sink>
+        <name>thru</name>
+        <type>$type</type>
+        <optional>1</optional>
+    </sink>
     <source>
         <name>out</name>
         <type>$type</type>
+    </source>
+    <source>
+        <name>thru</name>
+        <type>$type</type>
+        <optional>1</optional>
+    </source>
+    <source>
+        <name>omega</name>
+        <type>float</type>
+        <optional>1</optional>
+    </source>
+    <source>
+        <name>mu</name>
+        <type>float</type>
+        <optional>1</optional>
     </source>
 </block>

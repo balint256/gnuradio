@@ -47,11 +47,12 @@ namespace gr {
 							 float mu, float gain_mu,
 							 float omega_relative_limit)
       : block("clock_recovery_mm_ff",
-		 io_signature::make(1, 1, sizeof(float)),
-		 io_signature::make(1, 1, sizeof(float))),
+		 io_signature::make(1, 2, sizeof(float)),
+		 io_signature::make(1, 4, sizeof(float))),
 	d_mu(mu), d_gain_mu(gain_mu), d_gain_omega(gain_omega),
 	d_omega_relative_limit(omega_relative_limit),
-	d_last_sample(0), d_interp(new filter::mmse_fir_interpolator_ff())
+	d_last_sample(0), d_interp(new filter::mmse_fir_interpolator_ff()),
+	d_omega_orig(omega)
     {
       if(omega <  1)
 	throw std::out_of_range("clock rate must be > 0");
@@ -90,11 +91,24 @@ namespace gr {
 					    gr_vector_void_star &output_items)
     {
       const float *in = (const float *)input_items[0];
+      const float *thru_in = NULL;
+      if (input_items.size() > 1)
+	thru_in = (const float *) input_items[1];
       float *out = (float *)output_items[0];
+      float *thru_out = NULL;
+      if (output_items.size() > 1)
+	thru_out = (float *) output_items[1];
+      float *omega_out = NULL;
+      if (output_items.size() > 2)
+	omega_out = (float *) output_items[2];
+      float *mu_out = NULL;
+      if (output_items.size() > 3)
+	mu_out = (float *) output_items[3];
 
       int ii = 0; // input index
       int oo = 0; // output index
       int ni = ninput_items[0] - d_interp->ntaps(); // don't use more input than this
+      int thru_count = 0;
       float mm_val;
 
       while(oo < noutput_items && ii < ni ) {
@@ -106,6 +120,22 @@ namespace gr {
 	d_omega = d_omega + d_gain_omega * mm_val;
 	d_omega = d_omega_mid + gr::branchless_clip(d_omega-d_omega_mid, d_omega_relative_limit);
 	d_mu = d_mu + d_omega + d_gain_mu * mm_val;
+	
+	int i_omega = (int)floor(d_omega_orig);
+	
+	if (thru_out != NULL){
+	  if (thru_in != NULL) {
+	    //thru_out[oo] = thru_in[ii];
+	    memcpy(thru_out + thru_count, in + ii/* - (int)(d_mu - floor(d_mu))*/, sizeof(float)*i_omega);
+	    thru_count += i_omega;
+	  }
+	  else
+	    thru_out[oo] = in[ii];
+	}
+	if (omega_out != NULL)
+	  omega_out[oo] = d_omega;
+	if (mu_out != NULL)
+	  mu_out[oo] = d_mu;
 
 	ii += (int)floor(d_mu);
 	d_mu = d_mu - floor(d_mu);
@@ -113,7 +143,15 @@ namespace gr {
       }
 
       consume_each(ii);
-      return oo;
+      //return oo;
+      produce(0, oo);
+      if (thru_out != NULL){
+	  if (thru_in != NULL)
+	    produce(1, thru_count);
+	  else
+	    produce(1, oo);
+      }
+      return WORK_CALLED_PRODUCE;
     }
 
   } /* namespace digital */
