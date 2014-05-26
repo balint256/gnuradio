@@ -26,9 +26,10 @@ install(FILES
     filter_filterbank_vcvcf.xml
     filter_fractional_interpolator_xx.xml
     filter_fractional_resampler_xx.xml
+    filter_freq_xlating_fft_filter_ccc.xml
     filter_freq_xlating_fir_filter_xxx.xml
     filter_hilbert_fc.xml
-    filter_iir_filter_ffd.xml
+    filter_iir_filter_xxx.xml
     filter_interp_fir_filter_xxx.xml
     filter_pfb_arb_resampler.xml
     filter_pfb_channelizer.xml

@@ -47,7 +47,7 @@ macro(expand_h root)
     string(REGEX REPLACE "X+" ${sig} name ${root})
     list(APPEND expanded_files_h ${CMAKE_CURRENT_BINARY_DIR}/${name}.h)
   endforeach(sig)
-  
+
   #create a command to generate the files
   add_custom_command(
     OUTPUT ${expanded_files_h}
@@ -86,6 +86,7 @@ expand_h(probe_signal_X     b s i f c)
 expand_h(probe_signal_vX    b s i f c)
 expand_h(sample_and_hold_XX bb ss ii ff)
 expand_h(sub_XX             ss ii ff cc)
+expand_h(tsb_vector_sink_X  b s i f c)
 expand_h(xor_XX             bb ss ii)
 expand_h(packed_to_unpacked_XX bb ss ii)
 expand_h(unpacked_to_packed_XX bb ss ii)
@@ -109,7 +110,9 @@ install(FILES
     lfsr_15_1_0.h
     lfsr_32k.h
     log2_const.h
+    pack_k_bits.h
     rotator.h
+    unpack_k_bits.h
     wavfile.h
     add_ff.h
     annotator_1to1.h
@@ -169,6 +172,9 @@ install(FILES
     pack_k_bits_bb.h
     patterned_interleaver.h
     pdu.h
+    pdu_filter.h
+    pdu_set.h
+    pdu_remove.h
     pdu_to_tagged_stream.h
     peak_detector2_fb.h
     random_pdu.h

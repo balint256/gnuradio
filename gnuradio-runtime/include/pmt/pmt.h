@@ -411,6 +411,9 @@ PMT_API bool is_f64vector(pmt_t x);
 PMT_API bool is_c32vector(pmt_t x);
 PMT_API bool is_c64vector(pmt_t x);
 
+//! item size in bytes if \p x is any kind of uniform numeric vector
+PMT_API size_t uniform_vector_itemsize(pmt_t x);
+
 PMT_API pmt_t make_u8vector(size_t k, uint8_t fill);
 PMT_API pmt_t make_s8vector(size_t k, int8_t fill);
 PMT_API pmt_t make_u16vector(size_t k, uint16_t fill);
@@ -570,6 +573,9 @@ PMT_API pmt_t dict_items(pmt_t dict);
 
 //! Return list of keys
 PMT_API pmt_t dict_keys(pmt_t dict);
+
+//! Return a new dictionary \p dict1 with k=>v pairs from \p dict2 added.
+PMT_API pmt_t dict_update(const pmt_t &dict1, const pmt_t &dict2);
 
 //! Return list of values
 PMT_API pmt_t dict_values(pmt_t dict);

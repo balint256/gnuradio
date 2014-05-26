@@ -54,7 +54,7 @@ macro(expand_cc_h_impl root)
     list(APPEND expanded_files_h_impl ${CMAKE_CURRENT_BINARY_DIR}/${name}_impl.h)
     list(APPEND expanded_files_h ${CMAKE_CURRENT_BINARY_DIR}/../include/${name}.h)
   endforeach(sig)
-  
+
   #create a command to generate the _impl.cc files
   add_custom_command(
     OUTPUT ${expanded_files_cc_impl}
@@ -63,7 +63,7 @@ macro(expand_cc_h_impl root)
     ${CMAKE_CURRENT_BINARY_DIR}/generate_helper.py
     ${root} ${root}_impl.cc.t ${ARGN}
   )
-  
+
   #create a command to generate the _impl.h files
   add_custom_command(
     OUTPUT ${expanded_files_h_impl}
@@ -72,19 +72,19 @@ macro(expand_cc_h_impl root)
     ${CMAKE_CURRENT_BINARY_DIR}/generate_helper.py
     ${root} ${root}_impl.h.t ${ARGN}
   )
-  
+
   #make _impl.cc source files depend on headers to force generation
   set_source_files_properties(${expanded_files_cc_impl}
     PROPERTIES OBJECT_DEPENDS "${expanded_files_h_impl}"
   )
-  
+
   #make _impl.h source files depend on headers to force generation
   set_source_files_properties(${expanded_files_h_impl}
     PROPERTIES OBJECT_DEPENDS "${expanded_files_h}"
   )
 
   #install rules for the generated cc files
-  list(APPEND generated_sources ${expanded_files_cc_impl})  
+  list(APPEND generated_sources ${expanded_files_cc_impl})
 endmacro(expand_cc_h_impl)
 
 ########################################################################
@@ -111,6 +111,7 @@ expand_cc_h_impl(peak_detector_XX   fb ib sb)
 expand_cc_h_impl(probe_signal_X     b s i f c)
 expand_cc_h_impl(probe_signal_vX    b s i f c)
 expand_cc_h_impl(sample_and_hold_XX bb ss ii ff)
+expand_cc_h_impl(tsb_vector_sink_X  b s i f c)
 expand_cc_h_impl(sub_XX             ss ii ff cc)
 expand_cc_h_impl(xor_XX             bb ss ii)
 expand_cc_h_impl(packed_to_unpacked_XX bb ss ii)
@@ -147,6 +148,8 @@ list(APPEND gr_blocks_sources
     control_loop.cc
     count_bits.cc
     file_sink_base.cc
+    pack_k_bits.cc
+    unpack_k_bits.cc
     wavfile.cc
     add_ff_impl.cc
     annotator_1to1_impl.cc
@@ -210,6 +213,9 @@ list(APPEND gr_blocks_sources
     patterned_interleaver_impl.cc
     pdu.cc
     tag_debug_impl.cc
+    pdu_filter_impl.cc
+    pdu_set_impl.cc
+    pdu_remove_impl.cc
     pdu_to_tagged_stream_impl.cc
     peak_detector2_fb_impl.cc
     random_pdu_impl.cc

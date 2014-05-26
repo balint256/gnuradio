@@ -43,7 +43,7 @@
 		<block>filterbank_vcvcf</block>
 		<block>filter_delay_fc</block>
 		<block>hilbert_fc</block>
-		<block>iir_filter_ffd</block>
+		<block>iir_filter_xxx</block>
 		<block>interp_fir_filter_xxx</block>
 		<block>single_pole_iir_filter_xx</block>
 	</cat>
@@ -56,6 +56,7 @@
 	</cat>
 	<cat>
 		<name>Channelizers</name>
+		<block>freq_xlating_fft_filter_ccc</block>
 		<block>freq_xlating_fir_filter_xxx</block>
 		<block>pfb_channelizer_ccf</block>
 		<block>pfb_channelizer_hier_ccf</block>

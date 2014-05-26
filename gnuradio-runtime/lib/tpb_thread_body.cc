@@ -83,8 +83,12 @@ namespace gr {
     if(block->thread_priority() > 0) {
       gr::thread::set_thread_priority(d->thread, block->thread_priority());
     }
+    
+    // make sure our block isnt finished
+    block->clear_finished();
 
     while(1) {
+      tpb_loop_top:
       boost::this_thread::interruption_point();
 
       bool messages_pending = false;
@@ -121,6 +125,10 @@ namespace gr {
         s = block_executor::BLKD_IN;
       }
 
+      // if msg ports think we are done, we are done
+      if(block->finished())
+        s = block_executor::DONE;
+
       switch(s){
       case block_executor::READY:		// Tell neighbors we made progress.
         d->d_tpb.notify_neighbors(d);
@@ -131,6 +139,7 @@ namespace gr {
         break;
 
       case block_executor::DONE:		// Game over.
+        block->notify_msg_neighbors();
         d->d_tpb.notify_neighbors(d);
         return;
 
@@ -150,6 +159,14 @@ namespace gr {
             }
           }
           
+          // Original
+          /*while(!d->d_tpb.input_changed && block->empty_handled_p()){
+            boost::system_time const timeout=boost::get_system_time()+ boost::posix_time::milliseconds(250);
+            if(!d->d_tpb.input_cond.timed_wait(guard, timeout)){
+                goto tpb_loop_top; // timeout occured (perform sanity checks up top)
+                }
+            }*/
+
           // handle all pending messages
           BOOST_FOREACH(basic_block::msg_queue_map_t::value_type &i, block->msg_queue) {
             if(block->has_msg_handler(i.first)) {
