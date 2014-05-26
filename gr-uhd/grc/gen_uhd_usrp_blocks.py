@@ -298,16 +298,25 @@ self.\$(id).set_bandwidth(\$bw$(n), $n)
 	<check>$max_mboards >= \$num_mboards</check>
 	<check>\$num_mboards > 0</check>
 	<check>\$nchan >= \$num_mboards</check>
-	<$sourk>
-		<name>$direction</name>
-		<type>\$type.type</type>
-		<nports>\$nchan</nports>
-	</$sourk>
+#if $msg_ctl == 'sink'
 	<$msg_ctl>
 		<name>ctl</name>
 		<type>message</type>
 		<optional>1</optional>
 	</$msg_ctl>
+#end if
+	<$sourk>
+		<name>$direction</name>
+		<type>\$type.type</type>
+		<nports>\$nchan</nports>
+	</$sourk>
+#if $msg_ctl == 'source'
+	<$msg_ctl>
+		<name>ctl</name>
+		<type>message</type>
+		<optional>1</optional>
+	</$msg_ctl>
+#end if
 	<doc>
 The UHD USRP $sourk.title() Block:
 
