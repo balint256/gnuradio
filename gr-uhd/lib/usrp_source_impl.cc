@@ -559,14 +559,23 @@ namespace gr {
     usrp_source_impl::finite_acquisition_v(const size_t nsamps)
     {
 #ifdef GR_UHD_USE_STREAM_API
+      boost::recursive_mutex::scoped_lock lock(d_mutex);
+      
       //kludgy way to ensure rx streamer exsists
-      if(!_rx_stream) {
-        this->start();
-        this->stop();
-      }
+      //if(!_rx_stream) {
+      //  this->start();
+      //  this->stop();
+      //}
 
       //flush so there is no queued-up data
-      this->flush();
+      //this->flush();
+
+      if (_rx_stream)
+        this->stop(); // Does flush
+      else {
+        _rx_stream = _dev->get_rx_stream(_stream_args);
+        _samps_per_packet = _rx_stream->get_max_num_samps();
+      }
 
       //create a multi-dimensional container to hold an array of sample buffers
       std::vector<std::vector<std::complex<float> > >
