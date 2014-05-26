@@ -31,11 +31,9 @@ def load(platform):
     #create sections
     _config_parser.add_section('main')
     _config_parser.add_section('files_open')
-    print "Reading preferences from:", _prefs_file()
     try: _config_parser.read(_platform.get_prefs_file())
     except: pass
 def save():
-    print "Writing preferences to:", _prefs_file()
     try: _config_parser.write(open(_platform.get_prefs_file(), 'w'))
     except: pass
 
