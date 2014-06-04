@@ -126,7 +126,7 @@ namespace gr {
 	if (thru_out != NULL){
 	  if (thru_in != NULL) {
 	    //thru_out[oo] = thru_in[ii];
-	    memcpy(thru_out + thru_count, in + ii/* - (int)(d_mu - floor(d_mu))*/, sizeof(float)*i_omega);
+	    memcpy(thru_out + thru_count, /*in*/thru_in + ii/* - (int)(d_mu - floor(d_mu))*/, sizeof(float)*i_omega);
 	    thru_count += i_omega;
 	  }
 	  else
