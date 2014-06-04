@@ -41,7 +41,9 @@ MAIN_TMPL = """\
 		\#else
 		channels=range(\$nchan),
 		\#end if
-	),$lentag_arg
+	),
+	$lentag_arg
+	\$stream_immediately,
 )
 \#if \$clock_rate()
 self.\$(id).set_clock_rate(\$clock_rate, uhd.ALL_MBOARDS)
@@ -161,6 +163,21 @@ self.\$(id).set_bandwidth(\$bw$(n), $n)
 				part
 			\#end if
 		</hide>
+	</param>
+	<param>
+		<name>Stream start</name>
+		<key>stream_immediately</key>
+		<value>True</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>Immediately</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>Later (manually)</name>
+			<key>False</key>
+		</option>
 	</param>
 	<param>
 		<name>Device Address</name>
@@ -464,10 +481,11 @@ LENTAG_PARAM = """	<param>
 		<type>string</type>
 	</param>"""
 
-LENTAG_ARG = """
-	#if $len_tag_name()
-	$len_tag_name,
-	#end if"""
+#LENTAG_ARG = """
+#	#if $len_tag_name()
+#	$len_tag_name,
+#	#end if"""
+LENTAG_ARG = "$len_tag_name,"
 
 def parse_tmpl(_tmpl, **kwargs):
 	from Cheetah import Template

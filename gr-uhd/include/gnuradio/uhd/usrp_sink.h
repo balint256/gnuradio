@@ -139,7 +139,8 @@ namespace gr {
        */
       static sptr make(const ::uhd::device_addr_t &device_addr,
                        const ::uhd::stream_args_t &stream_args,
-                       const std::string &length_tag_name = "");
+                       const std::string &length_tag_name = "",
+                       bool stream_immediately = true);
 
       /*!
        * Set the start time for outgoing samples.

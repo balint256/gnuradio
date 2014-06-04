@@ -35,7 +35,8 @@ namespace gr {
     usrp_source::sptr
     usrp_source::make(const ::uhd::device_addr_t &device_addr,
                       const ::uhd::io_type_t &io_type,
-                      size_t num_channels)
+                      size_t num_channels,
+                      bool stream_immediately/* = true*/)
     {
       //fill in the streamer args
       ::uhd::stream_args_t stream_args;
@@ -49,20 +50,22 @@ namespace gr {
       for(size_t chan = 0; chan < num_channels; chan++)
         stream_args.channels.push_back(chan); //linear mapping
 
-      return usrp_source::make(device_addr, stream_args);
+      return usrp_source::make(device_addr, stream_args, stream_immediately);
     }
 
     usrp_source::sptr
     usrp_source::make(const ::uhd::device_addr_t &device_addr,
-                      const ::uhd::stream_args_t &stream_args)
+                      const ::uhd::stream_args_t &stream_args,
+                      bool stream_immediately/* = true*/)
     {
       check_abi();
       return usrp_source::sptr
-        (new usrp_source_impl(device_addr, stream_args_ensure(stream_args)));
+        (new usrp_source_impl(device_addr, stream_args_ensure(stream_args), stream_immediately));
     }
 
     usrp_source_impl::usrp_source_impl(const ::uhd::device_addr_t &device_addr,
-                                       const ::uhd::stream_args_t &stream_args):
+                                       const ::uhd::stream_args_t &stream_args,
+                                       bool stream_immediately/* = true*/):
       sync_block("gr uhd usrp source",
                     io_signature::make(0, 0, 0),
                     args_to_io_sig(stream_args)),
@@ -70,7 +73,9 @@ namespace gr {
       _nchan(stream_args.channels.size()),
       _stream_now(_nchan == 1),
       _tag_now(false),
-      _start_time_set(false)
+      _start_time_set(false),
+      _stream_immediately(stream_immediately),
+      _initial_start(false)
     {
       if(stream_args.cpu_format == "fc32")
         _type = boost::make_shared< ::uhd::io_type_t >(::uhd::io_type_t::COMPLEX_FLOAT32);
@@ -487,9 +492,19 @@ namespace gr {
             _dev->issue_stream_cmd(cmd, _stream_args.channels[i]);
         }
     }
-
+    
     bool
     usrp_source_impl::start(void)
+    {
+        if (_stream_immediately == false) {
+            _stream_immediately = true;
+            return true;
+        }
+        return _start();
+    }
+
+    bool
+    usrp_source_impl::_start(void)
     {
       boost::recursive_mutex::scoped_lock lock(d_mutex);
 #ifdef GR_UHD_USE_STREAM_API
@@ -511,12 +526,15 @@ namespace gr {
       }
       this->issue_stream_cmd(stream_cmd);
       _tag_now = true;
+      _initial_start = true;
       return true;
     }
 
     void
     usrp_source_impl::flush(void)
     {
+      if (_initial_start == false)
+       return;
       const size_t nbytes = 4096;
       gr_vector_void_star outputs;
       std::vector<std::vector<char> > buffs(_nchan, std::vector<char>(nbytes));
@@ -541,6 +559,9 @@ namespace gr {
     usrp_source_impl::stop(void)
     {
       boost::recursive_mutex::scoped_lock lock(d_mutex);
+      if (_initial_start == false)
+       return true;
+      
       this->issue_stream_cmd(::uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
       this->flush();
 
@@ -616,6 +637,10 @@ namespace gr {
                            gr_vector_void_star &output_items)
     {
       boost::recursive_mutex::scoped_lock lock(d_mutex);
+      if (_initial_start == false) {
+        boost::this_thread::sleep(boost::posix_time::milliseconds(/*d_sleep_duration*/1));
+        return 0;
+      }
 #ifdef GR_UHD_USE_STREAM_API
       //In order to allow for low-latency:
       //We receive all available packets without timeout.

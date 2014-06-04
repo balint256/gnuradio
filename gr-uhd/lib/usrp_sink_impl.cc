@@ -53,16 +53,18 @@ namespace gr {
     usrp_sink::sptr
     usrp_sink::make(const ::uhd::device_addr_t &device_addr,
                     const ::uhd::stream_args_t &stream_args,
-                    const std::string &length_tag_name)
+                    const std::string &length_tag_name,
+		    bool stream_immediately/* = true*/)
     {
       check_abi();
       return usrp_sink::sptr
-        (new usrp_sink_impl(device_addr, stream_args_ensure(stream_args), length_tag_name));
+        (new usrp_sink_impl(device_addr, stream_args_ensure(stream_args), length_tag_name, stream_immediately));
     }
 
     usrp_sink_impl::usrp_sink_impl(const ::uhd::device_addr_t &device_addr,
                                    const ::uhd::stream_args_t &stream_args,
-                                   const std::string &length_tag_name)
+                                   const std::string &length_tag_name,
+				   bool stream_immediately/* = true*/)
       : sync_block("gr uhd usrp sink",
                       args_to_io_sig(stream_args),
                       io_signature::make(0, 0, 0)),
@@ -79,7 +81,9 @@ namespace gr {
 	_call_tune(false),
         _ignore_samples(false),
         _send_flush(false),
-        _ignored_sample_count(0)
+        _ignored_sample_count(0),
+	_stream_immediately(stream_immediately),
+	_initial_start(false)
     {
       message_port_register_out(MSG_CTL_PORT_ID);
       
@@ -522,6 +526,11 @@ namespace gr {
                          gr_vector_const_void_star &input_items,
                          gr_vector_void_star &output_items)
     {
+      if (_initial_start == false) {
+        boost::this_thread::sleep(boost::posix_time::milliseconds(/*d_sleep_duration*/1));
+        return 0;
+      }
+      
       int ninput_items = noutput_items; //cuz it's a sync block
 
       // default to send a mid-burst packet
@@ -804,6 +813,16 @@ namespace gr {
     bool
     usrp_sink_impl::start(void)
     {
+      if (_stream_immediately == false) {
+	_stream_immediately = true;
+	return true;
+      }
+      return _start();
+    }
+    
+    bool
+    usrp_sink_impl::_start(void)
+    {
 #ifdef GR_UHD_USE_STREAM_API
       _tx_stream = _dev->get_tx_stream(_stream_args);
 #endif
@@ -829,6 +848,7 @@ namespace gr {
         (gr_vector_const_void_star(_nchan), 0, _metadata,
          *_type, ::uhd::device::SEND_MODE_ONE_PACKET, 1.0);
 #endif
+      _initial_start = true;
       return true;
     }
 

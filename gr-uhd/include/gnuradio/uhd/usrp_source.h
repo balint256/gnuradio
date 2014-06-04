@@ -91,7 +91,8 @@ namespace gr {
        */
       static sptr make(const ::uhd::device_addr_t &device_addr,
                        const ::uhd::io_type_t &io_type,
-                       size_t num_channels);
+                       size_t num_channels,
+                       bool stream_immediately = true);
 
       /*!
        * \brief Make a new USRP source block.
@@ -116,7 +117,8 @@ namespace gr {
        * \return a new USRP source block object
        */
       static sptr make(const ::uhd::device_addr_t &device_addr,
-                       const ::uhd::stream_args_t &stream_args);
+                       const ::uhd::stream_args_t &stream_args,
+                       bool stream_immediately = true);
 
       /*!
        * Set the start time for incoming samples.

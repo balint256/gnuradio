@@ -54,7 +54,8 @@ namespace gr {
     {
     public:
       usrp_source_impl(const ::uhd::device_addr_t &device_addr,
-                       const ::uhd::stream_args_t &stream_args);
+                       const ::uhd::stream_args_t &stream_args,
+                       bool stream_immediately = true);
       ~usrp_source_impl();
 
       void setup_rpc();
@@ -116,6 +117,7 @@ namespace gr {
       void clear_command_time(size_t mboard);
       void flush(void);
       bool start(void);
+      bool _start(void);
       bool stop(void);
       std::vector<std::complex<float> > finite_acquisition(const size_t nsamps);
       std::vector<std::vector<std::complex<float> > > finite_acquisition_v(const size_t nsamps);
@@ -133,7 +135,7 @@ namespace gr {
       size_t _samps_per_packet;
 #endif
       size_t _nchan;
-      bool _stream_now, _tag_now;
+      bool _stream_now, _tag_now, _stream_immediately, _initial_start;
       ::uhd::rx_metadata_t _metadata;
       pmt::pmt_t _id;
 

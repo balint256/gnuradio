@@ -59,7 +59,8 @@ namespace gr {
     public:
        usrp_sink_impl(const ::uhd::device_addr_t &device_addr,
                       const ::uhd::stream_args_t &stream_args,
-                      const std::string &length_tag_name);
+                      const std::string &length_tag_name,
+                      bool stream_immediately = true);
       ~usrp_sink_impl();
 
       void setup_rpc();
@@ -116,6 +117,7 @@ namespace gr {
       void set_start_time(const ::uhd::time_spec_t &time);
 
       bool start(void);
+      bool _start(void);
       bool stop(void);
 
       int work(int noutput_items,
@@ -141,7 +143,7 @@ namespace gr {
       ::uhd::tx_streamer::sptr _tx_stream;
 #endif
       size_t _nchan;
-      bool _stream_now;
+      bool _stream_now, _stream_immediately, _initial_start;
       bool _ignore_samples, _send_flush;
       uint64_t _ignored_sample_count;
       ::uhd::tx_metadata_t _metadata;
