@@ -59,8 +59,13 @@ class _fft_sink_base(gr.hier_block2, common.wxgui_hb):
 		size=fft_window.DEFAULT_WIN_SIZE,
 		peak_hold=False,
 		win=None,
-                use_persistence=False,
-                persist_alpha=None,
+		use_persistence=False,
+		persist_alpha=None,
+		threshold_level=None,
+		freq_of_interest=None,
+		fft_in=False,
+		always_run=False,
+		fft_out=False,
 		**kwargs #do not end with a comma
 	):
 		#ensure avg alpha
@@ -74,12 +79,18 @@ class _fft_sink_base(gr.hier_block2, common.wxgui_hb):
                   #calculate alpha from wanted cutoff freq
                   persist_alpha = 1.0 - math.exp(-2.0*math.pi*analog_cutoff_freq/actual_fft_rate)
 
+		if fft_out:
+			always_run = True
+			io_out = gr.io_signature(1, 1, gr.sizeof_float*fft_size)
+		else:
+			io_out = gr.io_signature(0, 0, 0)
+		
 		#init
 		gr.hier_block2.__init__(
 			self,
 			"fft_sink",
 			gr.io_signature(1, 1, self._item_size),
-			gr.io_signature(0, 0, 0),
+			io_out,
 		)
 		#blocks
 		fft = self._fft_chain(
@@ -122,17 +133,38 @@ class _fft_sink_base(gr.hier_block2, common.wxgui_hb):
 			avg_alpha_key=AVG_ALPHA_KEY,
 			peak_hold=peak_hold,
 			msg_key=MSG_KEY,
-                        use_persistence=use_persistence,
-                        persist_alpha=persist_alpha,
+			use_persistence=use_persistence,
+			persist_alpha=persist_alpha,
+			threshold_level=threshold_level,
+			freq_of_interest=freq_of_interest
 		)
 		common.register_access_methods(self, self.win)
 		setattr(self.win, 'set_baseband_freq', getattr(self, 'set_baseband_freq')) #BACKWARDS
 		setattr(self.win, 'set_peak_hold', getattr(self, 'set_peak_hold')) #BACKWARDS
+		setattr(self.win, 'set_threshold_level', getattr(self, 'set_threshold_level')) #BACKWARDS
+		setattr(self.win, 'set_freq_of_interest', getattr(self, 'set_freq_of_interest')) #BACKWARDS
 		#connect
-		self.wxgui_connect(self, fft, sink)
+		if always_run:
+			connect_fn = self.connect
+		else:
+			connect_fn = self.wxgui_connect
+		
+		if fft_in:
+			connect_fn(self, sink)
+		else:
+			connect_fn(self, fft, sink)
+		
+		if fft_out:	# Forces 'always_run' to True (so use normal 'connect')
+			if fft_in:
+				connect_fn(self, self)
+			else:
+				connect_fn(fft, self)
 		
 	def set_callback(self,callb):
 		self.win.set_callback(callb)
+	
+	def set_line(self, data):
+		self.win.set_line(data)
 
 class fft_sink_f(_fft_sink_base):
 	_fft_chain = logpwrfft.logpwrfft_f

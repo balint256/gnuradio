@@ -30,6 +30,9 @@ waterfallsink2.$(type.fcn)(
 #if $win_size()
 	size=$win_size,
 #end if
+	fft_in=$fft_in,
+	always_run=$always_run,
+	fft_out=$fft_out,
 )
 #if not $grid_pos()
 $(parent).Add(self.$(id).win)
@@ -162,6 +165,51 @@ self.$(id).set_callback($(id)_callback)
 		</option>
 	</param>
 	<param>
+		<name>Input</name>
+		<key>fft_in</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>FFT</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>Samples</name>
+			<key>False</key>
+		</option>
+	</param>
+	<param>
+		<name>Run</name>
+		<key>always_run</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>Always</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>When visible</name>
+			<key>False</key>
+		</option>
+	</param>
+	<param>
+		<name>Output</name>
+		<key>fft_out</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>FFT</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>None</name>
+			<key>False</key>
+		</option>
+	</param>
+	<param>
 		<name>Window Size</name>
 		<key>win_size</key>
 		<value></value>
@@ -191,6 +239,12 @@ self.$(id).set_callback($(id)_callback)
 		<name>in</name>
 		<type>$type</type>
 	</sink>
+	<source>
+		<name>fft</name>
+		<type>float</type>
+		<vlen>$fft_size</vlen>
+		<optional>1</optional>
+	</source>
 	<doc>
 Set Average Alpha to 0 for automatic setting.
 

@@ -55,16 +55,24 @@ class _waterfall_sink_base(gr.hier_block2, common.wxgui_hb):
 		dynamic_range=80,
 		num_lines=256,
 		win=None,
+		fft_in=False,
+		always_run=False,
+		fft_out=False,
 		**kwargs #do not end with a comma
 	):
 		#ensure avg alpha
 		if avg_alpha is None: avg_alpha = 2.0/fft_rate
+		if fft_out:
+			always_run = True
+			io_out = gr.io_signature(1, 1, gr.sizeof_float*fft_size)
+		else:
+			io_out = gr.io_signature(0, 0, 0)
 		#init
 		gr.hier_block2.__init__(
 			self,
 			"waterfall_sink",
 			gr.io_signature(1, 1, self._item_size),
-			gr.io_signature(0, 0, 0),
+			io_out,
 		)
 		#blocks
 		fft = self._fft_chain(
@@ -114,7 +122,21 @@ class _waterfall_sink_base(gr.hier_block2, common.wxgui_hb):
 		common.register_access_methods(self, self.win)
 		setattr(self.win, 'set_baseband_freq', getattr(self, 'set_baseband_freq')) #BACKWARDS
 		#connect
-		self.wxgui_connect(self, fft, sink)
+		if always_run:
+			connect_fn = self.connect
+		else:
+			connect_fn = self.wxgui_connect
+		
+		if fft_in:
+			connect_fn(self, sink)
+		else:
+			connect_fn(self, fft, sink)
+		
+		if fft_out:	# Forces 'always_run' to True (so use normal 'connect')
+			if fft_in:
+				connect_fn(self, self)
+			else:
+				connect_fn(fft, self)
 
 	def set_callback(self,callb):
 		self.win.set_callback(callb)

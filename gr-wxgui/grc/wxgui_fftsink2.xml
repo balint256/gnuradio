@@ -25,13 +25,22 @@ fftsink2.$(type.fcn)(
 	average=$average,
 	avg_alpha=#if $avg_alpha() then $avg_alpha else 'None'#,
 	title=$title,
-	peak_hold=$peak_hold,
+	peak_hold=$peak_hold,#slurp
+#if $threshold_level() != float('inf')
+	threshold_level=$threshold_level,#slurp
+#end if
+#if $freq_of_interest() != float('inf')
+	freq_of_interest=$freq_of_interest,#slurp
+#end if
 #if $win()
 	win=$win,
 #end if
 #if $win_size()
 	size=$win_size,
 #end if
+	fft_in=$fft_in,
+	always_run=$always_run,
+	fft_out=$fft_out,
 )
 #if not $grid_pos()
 $(parent).Add(self.$(id).win)
@@ -46,6 +55,8 @@ self.$(id).set_callback($(id)_callback)
 #end if</make>
 	<callback>set_baseband_freq($baseband_freq)</callback>
 	<callback>set_sample_rate($samp_rate)</callback>
+	<callback>set_threshold_level($threshold_level)</callback>
+	<callback>set_freq_of_interest($freq_of_interest)</callback>
 	<param>
 		<name>Type</name>
 		<key>type</key>
@@ -174,6 +185,28 @@ self.$(id).set_callback($(id)_callback)
 		<hide>#if $average() == 'True' then 'none' else 'all'#</hide>
 	</param>
 	<param>
+		<name>Threshold Level</name>
+		<key>threshold_level</key>
+		<value>float('inf')</value>
+		<type>real</type>
+		<hide>#if $threshold_level() == float('inf') then 'part' else 'none'#</hide>
+		<option>
+			<name>Not Shown</name>
+			<key>float('inf')</key>
+		</option>
+	</param>
+	<param>
+		<name>Freq of Interest</name>
+		<key>freq_of_interest</key>
+		<value>float('inf')</value>
+		<type>real</type>
+		<hide>#if $threshold_level() == float('inf') then 'part' else 'none'#</hide>
+		<option>
+			<name>Not Shown</name>
+			<key>float('inf')</key>
+		</option>
+	</param>
+	<param>
 		<name>Window</name>
 		<key>win</key>
 		<value>None</value>
@@ -202,6 +235,51 @@ self.$(id).set_callback($(id)_callback)
 		<option>
 			<name>Flattop</name>
 			<key>window.flattop</key>
+		</option>
+	</param>
+	<param>
+		<name>Input</name>
+		<key>fft_in</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>FFT</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>Samples</name>
+			<key>False</key>
+		</option>
+	</param>
+	<param>
+		<name>Run</name>
+		<key>always_run</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>Always</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>When visible</name>
+			<key>False</key>
+		</option>
+	</param>
+	<param>
+		<name>Output</name>
+		<key>fft_out</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>part</hide>
+		<option>
+			<name>FFT</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>None</name>
+			<key>False</key>
 		</option>
 	</param>
 	<param>
@@ -234,6 +312,12 @@ self.$(id).set_callback($(id)_callback)
 		<name>in</name>
 		<type>$type</type>
 	</sink>
+	<source>
+		<name>fft</name>
+		<type>float</type>
+		<vlen>$fft_size</vlen>
+		<optional>1</optional>
+	</source>
 	<doc>
 Set Average Alpha to 0 for automatic setting.
 

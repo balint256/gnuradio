@@ -54,6 +54,9 @@ class channel_plotter(grid_plotter_base):
 		#setup waveform cache
 		self._waveform_cache = self.new_gl_cache(self._draw_waveforms, 50)
 		self._channels = dict()
+		#setup line cache
+		self._line_cache = self.new_gl_cache(self._draw_lines, 60)
+		self._lines = dict()
 		#init channel plotter
 		self.register_init(self._init_channel_plotter)
 		self.callback = None
@@ -226,6 +229,102 @@ class channel_plotter(grid_plotter_base):
 			TRIG_OFF_KEY: trig_off,
 		}
 		self._waveform_cache.changed(True)
+		self.unlock()
+	
+	def _draw_lines(self):
+		#use scissor to prevent drawing outside grid
+		GL.glEnable(GL.GL_SCISSOR_TEST)
+		GL.glScissor(
+			self.padding_left+1,
+			self.padding_bottom+1,
+			self.width-self.padding_left-self.padding_right-1,
+			self.height-self.padding_top-self.padding_bottom-1,
+		)
+		
+		#use opengl to scale the waveform
+		GL.glPushMatrix()
+		
+		GL.glTranslatef(self.padding_left, self.padding_top, 0)
+		GL.glScalef(
+			(self.width-self.padding_left-self.padding_right),
+			(self.height-self.padding_top-self.padding_bottom),
+			1,
+		)
+		GL.glTranslatef(0, 1, 0)
+		
+		x_scale, x_trans = 1.0/(self.x_max-self.x_min), -self.x_min
+		
+		y_scale = -1.0/(self.y_max-self.y_min)
+		y_trans = -self.y_min
+		
+		GL.glScalef(x_scale, y_scale, 1)
+		GL.glTranslatef(x_trans, y_trans, 0)
+		
+		for k in self._lines:
+			l = self._lines[k]
+			t = l['type']
+			if l.has_key('colour') and l['colour'] is not None:
+				GL.glColor3f(*l['colour'])
+			elif t == 'h':
+				GL.glColor3f(0.8, 0.0, 0.0)
+			elif t == 'v':
+				GL.glColor3f(0.0, 0.8, 0.0)
+			else:
+				GL.glColor3f(0.0, 0.0, 0.0)
+			
+			offset = l['offset']
+			if t == 'h':
+				GL.glBegin(GL.GL_LINES)
+				GL.glVertex3f(self.x_min, offset, 0.0)
+				GL.glVertex3f(self.x_max, offset, 0.0)
+				GL.glEnd()
+			elif t == 'v':
+				GL.glBegin(GL.GL_LINES)
+				GL.glVertex3f(offset, self.y_min, 0.0)
+				GL.glVertex3f(offset, self.y_max, 0.0)
+				GL.glEnd()
+		
+		GL.glPopMatrix()
+		
+		GL.glDisable(GL.GL_SCISSOR_TEST)
+
+	def set_horizontal_line(self, data):	# Assuming one line
+		#self.lock()
+		#if data is None:
+		#	if self._lines.has_key('h'):
+		#		del self._lines['h']
+		#else:
+		#	self._lines['h'] = data
+		#self._line_cache.changed(True)
+		#self.unlock()
+		if data is None:
+			self.set_line({'id':'h','action':False})
+		else:
+			self.set_line({'id':'h','action':True,'offset':data,'type':'h'})
+	
+	def set_vertical_line(self, data):	# Assuming one line
+		#self.lock()
+		#if data is None:
+		#	if self._lines.has_key('v'):
+		#		del self._lines['v']
+		#else:
+		#	self._lines['v'] = data
+		#self._line_cache.changed(True)
+		#self.unlock()
+		if data is None:
+			self.set_line({'id':'v','action':False})
+		else:
+			self.set_line({'id':'v','action':True,'offset':data,'type':'v'})
+	
+	def set_line(self, data):
+		self.lock()
+		action = data['action']
+		if action == True:
+			self._lines[data['id']] = data
+		elif action == False:
+			if self._lines.has_key(data['id']):
+				del self._lines[data['id']]
+		self._line_cache.changed(True)
 		self.unlock()
 
 if __name__ == '__main__':
