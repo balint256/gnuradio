@@ -30,7 +30,7 @@
 		<name>Swap</name>
 		<key>swap</key>
 		<value>False</value>
-		<type>enum</type>
+		<type>raw</type>
 		<hide>part</hide>
 		<option>
 			<name>Yes</name>
