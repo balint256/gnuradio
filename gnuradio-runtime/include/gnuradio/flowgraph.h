@@ -152,8 +152,14 @@ namespace gr {
     // Connect two endpoints
     void connect(const endpoint &src, const endpoint &dst);
 
+    // Register singleton
+    void connect(basic_block_sptr block);
+
     // Disconnect two endpoints
     void disconnect(const endpoint &src, const endpoint &dst);
+
+    // Unregister singleton
+    void disconnect(basic_block_sptr block);
 
     // Connect an output port to an input port (convenience)
     void connect(basic_block_sptr src_block, int src_port,
@@ -181,6 +187,9 @@ namespace gr {
     // Return vector of msg edges
     const msg_edge_vector_t &msg_edges() const { return d_msg_edges; }
 
+    // Return singleton blocks
+    const basic_block_vector_t &singleton_blocks() const { return d_singleton_blocks; }
+
     // Return vector of connected blocks
     basic_block_vector_t calc_used_blocks();
 
@@ -192,7 +201,7 @@ namespace gr {
     std::vector<basic_block_vector_t> partition();
 
   protected:
-    basic_block_vector_t d_blocks;
+    basic_block_vector_t d_blocks, d_singleton_blocks;
     edge_vector_t d_edges;
     msg_edge_vector_t d_msg_edges;
 

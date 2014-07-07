@@ -76,6 +76,27 @@ namespace gr {
   }
 
   void
+  flowgraph::connect(basic_block_sptr block)
+  {
+    basic_block_viter_t result;
+    result = std::find(d_singleton_blocks.begin(), d_singleton_blocks.end(), block);
+    if (result == d_singleton_blocks.end())
+    {
+      //std::cerr << "Added singleton: " << block->symbol_name() << std::endl;
+      d_singleton_blocks.push_back(block);
+    }
+  }
+
+  void
+  flowgraph::disconnect(basic_block_sptr block)
+  {
+    basic_block_viter_t result;
+    result = std::find(d_singleton_blocks.begin(), d_singleton_blocks.end(), block);
+    if (result != d_singleton_blocks.end())
+      d_singleton_blocks.erase(result);
+  }
+
+  void
   flowgraph::disconnect(const endpoint &src, const endpoint &dst)
   {
     for(edge_viter_t p = d_edges.begin(); p != d_edges.end(); p++) {
@@ -195,6 +216,11 @@ namespace gr {
   flowgraph::calc_used_blocks()
   {
     basic_block_vector_t tmp;
+
+    for (basic_block_viter_t it = d_singleton_blocks.begin(); it != d_singleton_blocks.end(); it++)
+    {
+      tmp.push_back(*it);
+    }
 
     // make sure free standing message blocks are included
     for(msg_edge_viter_t p = d_msg_edges.begin(); p != d_msg_edges.end(); p++) {

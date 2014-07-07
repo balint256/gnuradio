@@ -90,6 +90,8 @@ namespace gr {
     }
 
     d_blocks.push_back(block);
+    
+    d_fg->connect(block);
   }
 
   void
@@ -508,6 +510,7 @@ namespace gr {
     // Add my edges to the flow graph, resolving references to actual endpoints
     edge_vector_t edges = d_fg->edges();
     msg_edge_vector_t msg_edges = d_fg->msg_edges();
+    basic_block_vector_t singletons = d_fg->singleton_blocks();
     edge_viter_t p;
     msg_edge_viter_t q,u;
 
@@ -532,6 +535,15 @@ namespace gr {
         if(!b->is_rpc_set()) {
           b->setup_rpc();
           b->rpc_set();
+        }
+      }
+    }
+    
+    for (basic_block_viter_t it = singletons.begin(); it != singletons.end(); it++) {
+      if(ctrlport_on) {
+        if(!(*it)->is_rpc_set()) {
+          (*it)->setup_rpc();
+          (*it)->rpc_set();
         }
       }
     }
@@ -597,6 +609,10 @@ namespace gr {
     for(std::vector<std::pair<msg_endpoint, bool> >::iterator it = resolved_endpoints.begin();
         it != resolved_endpoints.end(); it++) {
       sfg->clear_endpoint((*it).first, (*it).second);
+    }
+
+    for (basic_block_viter_t it = singletons.begin(); it != singletons.end(); it++) {
+      sfg->connect((*it));
     }
 
     /*
