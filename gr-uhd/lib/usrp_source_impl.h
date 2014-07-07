@@ -27,6 +27,8 @@
 static const pmt::pmt_t TIME_KEY = pmt::string_to_symbol("rx_time");
 static const pmt::pmt_t RATE_KEY = pmt::string_to_symbol("rx_rate");
 static const pmt::pmt_t FREQ_KEY = pmt::string_to_symbol("rx_freq");
+static const pmt::pmt_t ANT_KEY  = pmt::string_to_symbol("rx_ant");
+static const pmt::pmt_t GAIN_KEY = pmt::string_to_symbol("rx_gain");
 
 namespace gr {
   namespace uhd {
@@ -145,6 +147,8 @@ namespace gr {
       //tag shadows
       double _samp_rate;
       double _center_freq;
+      double _gain;
+      std::string _antenna;
 
       boost::recursive_mutex d_mutex;
     };

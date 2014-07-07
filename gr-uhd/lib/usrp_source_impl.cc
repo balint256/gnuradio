@@ -75,7 +75,10 @@ namespace gr {
       _tag_now(false),
       _start_time_set(false),
       _stream_immediately(stream_immediately),
-      _initial_start(false)
+      _initial_start(false),
+      _samp_rate(0),
+      _center_freq(0),
+      _gain(0)
     {
       if(stream_args.cpu_format == "fc32")
         _type = boost::make_shared< ::uhd::io_type_t >(::uhd::io_type_t::COMPLEX_FLOAT32);
@@ -171,6 +174,8 @@ namespace gr {
     usrp_source_impl::set_gain(double gain, size_t chan)
     {
       chan = _stream_args.channels[chan];
+      _gain = gain;
+      _tag_now = true;
       return _dev->set_rx_gain(gain, chan);
     }
 
@@ -178,6 +183,8 @@ namespace gr {
     usrp_source_impl::set_gain(double gain, const std::string &name, size_t chan)
     {
       chan = _stream_args.channels[chan];
+      _gain = gain;
+      _tag_now = true;
       return _dev->set_rx_gain(gain, name, chan);
     }
 
@@ -220,6 +227,8 @@ namespace gr {
     usrp_source_impl::set_antenna(const std::string &ant, size_t chan)
     {
       chan = _stream_args.channels[chan];
+      _antenna = ant;
+      _tag_now = true;
       return _dev->set_rx_antenna(ant, chan);
     }
 
@@ -682,6 +691,10 @@ namespace gr {
                                pmt::from_double(_samp_rate), _id);
             this->add_item_tag(i, nitems_written(0), FREQ_KEY,
                                pmt::from_double(_center_freq), _id);
+            this->add_item_tag(i, nitems_written(0), ANT_KEY,
+                               pmt::intern(_antenna), _id);
+            this->add_item_tag(i, nitems_written(0), GAIN_KEY,
+                               pmt::from_double(_gain), _id);
           }
         }
         break;
