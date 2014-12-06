@@ -41,13 +41,15 @@ namespace gr {
 
       float d_modulus;
       float d_mu;
+      bool d_decim;
+      int d_sps;
 
     protected:
       gr_complex error(const gr_complex &out);
       void update_tap(gr_complex &tap, const gr_complex &in);
   
     public:
-      cma_equalizer_cc_impl(int num_taps, float modulus, float mu, int sps);
+      cma_equalizer_cc_impl(int num_taps, float modulus, float mu, int sps, bool decim = true);
       ~cma_equalizer_cc_impl();
 
       void set_taps(const std::vector<gr_complex> &taps);

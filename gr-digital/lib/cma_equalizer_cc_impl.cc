@@ -33,21 +33,21 @@ namespace gr {
     using namespace filter::kernel;
 
     cma_equalizer_cc::sptr
-    cma_equalizer_cc::make(int num_taps, float modulus, float mu, int sps)
+    cma_equalizer_cc::make(int num_taps, float modulus, float mu, int sps, bool decim /*= true*/)
     {
       return gnuradio::get_initial_sptr
-	(new cma_equalizer_cc_impl(num_taps, modulus, mu, sps));
+	(new cma_equalizer_cc_impl(num_taps, modulus, mu, sps, decim));
     }
 
     cma_equalizer_cc_impl::cma_equalizer_cc_impl(int num_taps, float modulus,
-						 float mu, int sps)
+						 float mu, int sps, bool decim /*= true*/)
       : sync_decimator("cma_equalizer_cc",
 			  io_signature::make(1, 1, sizeof(gr_complex)),
 			  io_signature::make(1, 1, sizeof(gr_complex)),
-			  sps),
+			  (decim ? sps : 1)),
 	fir_filter_ccc(sps, std::vector<gr_complex>(num_taps, gr_complex(0,0))),
 	d_new_taps(num_taps, gr_complex(0,0)),
-	d_updated(false), d_error(gr_complex(0,0))
+	d_updated(false), d_error(gr_complex(0,0)), d_decim(decim), d_sps(sps)
     {
       set_modulus(modulus);
       set_gain(mu);
@@ -56,6 +56,9 @@ namespace gr {
       fir_filter_ccc::set_taps(d_new_taps);
 
       set_history(num_taps);
+      
+      if (decim == false)
+	set_output_multiple(sps);
     }
 
     cma_equalizer_cc_impl::~cma_equalizer_cc_impl()
@@ -111,14 +114,16 @@ namespace gr {
       for(int i = 0; i < noutput_items; i++) {
 	out[i] = filter(&in[j]);
 
-	// Adjust taps
-	d_error = error(out[i]);
-	for(k = 0; k < l; k++) {
-	  // Update tap locally from error.
-	  update_tap(d_taps[k], in[j+k]);
+	if ((d_decim) || ((d_decim == false) && ((i % d_sps) == 0))) {
+	    // Adjust taps
+	    d_error = error(out[i]);
+	    for(k = 0; k < l; k++) {
+	      // Update tap locally from error.
+	      update_tap(d_taps[k], in[j+k]);
 
-	  // Update aligned taps in filter object.
-	  fir_filter_ccc::update_tap(d_taps[k], k);
+	      // Update aligned taps in filter object.
+	      fir_filter_ccc::update_tap(d_taps[k], k);
+	    }
 	}
 
 	j += decimation();

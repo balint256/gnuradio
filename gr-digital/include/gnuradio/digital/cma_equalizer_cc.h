@@ -59,7 +59,7 @@ namespace gr {
        * \param mu Gain of the update loop
        * \param sps Number of samples per symbol of the input signal
        */
-      static sptr make(int num_taps, float modulus, float mu, int sps);
+      static sptr make(int num_taps, float modulus, float mu, int sps, bool decim = true);
 
       virtual void set_taps(const std::vector<gr_complex> &taps) = 0;
       virtual std::vector<gr_complex> taps() const = 0;
