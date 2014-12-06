@@ -43,7 +43,9 @@ MAIN_TMPL = """\
 		\#end if
 	),
 	$lentag_arg
+\#if str(\$stream_immediately) == 'False'
 	\$stream_immediately,
+\#end if
 )
 \#if \$clock_rate()
 self.\$(id).set_clock_rate(\$clock_rate, uhd.ALL_MBOARDS)
@@ -58,8 +60,9 @@ self.\$(id).set_clock_source(\$clock_source$(m), $m)
 self.\$(id).set_time_source(\$time_source$(m), $m)
 \#end if
 ########################################################################
-\#if \$num_mboards() > $m and \$sd_spec$(m)()
-self.\$(id).set_subdev_spec(\$sd_spec$(m), $m)
+#\#if \$num_mboards() > $m and \$sd_spec$(m)()
+\#if \$num_mboards() > $m
+if \$sd_spec$(m) != "": self.\$(id).set_subdev_spec(\$sd_spec$(m), $m)
 \#end if
 ########################################################################
 #end for
