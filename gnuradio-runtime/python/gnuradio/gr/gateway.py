@@ -29,10 +29,10 @@ import numpy
 # Magic to turn pointers into numpy arrays
 # http://docs.scipy.org/doc/numpy/reference/arrays.interface.html
 ########################################################################
-def pointer_to_ndarray(addr, dtype, nitems):
+def pointer_to_ndarray(addr, dtype, nitems, read_only=False):
     class array_like:
         __array_interface__ = {
-            'data' : (int(addr), False),
+            'data' : (int(addr), read_only),
             'typestr' : dtype.base.str,
             'descr' : dtype.base.descr,
             'shape' : (nitems,) + dtype.shape,
@@ -135,7 +135,8 @@ class gateway_block(object):
                 input_items=[pointer_to_ndarray(
                     self.__message.general_work_args_input_items[i],
                     self.__in_sig[i],
-                    self.__message.general_work_args_ninput_items[i]
+                    self.__message.general_work_args_ninput_items[i],
+                    True
                 ) for i in self.__in_indexes],
 
                 output_items=[pointer_to_ndarray(
@@ -151,7 +152,8 @@ class gateway_block(object):
                 input_items=[pointer_to_ndarray(
                     self.__message.work_args_input_items[i],
                     self.__in_sig[i],
-                    self.__message.work_args_ninput_items
+                    self.__message.work_args_ninput_items,
+                    True
                 ) for i in self.__in_indexes],
 
                 output_items=[pointer_to_ndarray(
@@ -178,8 +180,8 @@ class gateway_block(object):
         forecast is only called from a general block
         this is the default implementation
         """
-        for ninput_item in ninput_items_required:
-            ninput_item = noutput_items + self.history() - 1;
+        for i in xrange(len(ninput_items_required)):
+            ninput_items_required[i] = noutput_items + self.history() - 1;
         return
 
     def general_work(self, *args, **kwargs):
