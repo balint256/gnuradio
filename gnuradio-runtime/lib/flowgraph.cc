@@ -178,9 +178,16 @@ namespace gr {
 
     if(!e.block()->has_msg_port(e.port())) {
       const gr::basic_block::msg_queue_map_t& msg_map = e.block()->get_msg_map();
-      std::cout << "Could not find port: " << e.port() << " in:" << std::endl;
+      std::cout << "Could not find port: " << e.port() << " in queue map:" << std::endl;
       for (gr::basic_block::msg_queue_map_t::const_iterator it = msg_map.begin(); it != msg_map.end(); ++it)
-        std::cout << it->first << std::endl;
+        std::cout << "'" << it->first << "'" << std::endl;
+      const pmt::pmt_t& subscribers = e.block()->get_msg_subscribers();
+      std::cout << "Could not find port: " << e.port() << " in subscriber dictionary:" << std::endl;
+      size_t len = pmt::length(subscribers);
+      pmt::pmt_t keys = pmt::dict_keys(subscribers);
+      for(size_t i = 0; i < len; i++) {
+        std::cout << "'" << pmt::nth(i, keys) << "'" << std::endl;
+      }
       std::cout << std::endl;
       throw std::invalid_argument("invalid msg port in connect() or disconnect()");
     }

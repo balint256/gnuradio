@@ -90,6 +90,7 @@ namespace gr {
   void
   basic_block::message_port_register_in(pmt::pmt_t port_id, bool blocking/* = false*/)
   {
+    //std::cout << name() << "<" << unique_id() << "> registering in:" << port_id << std::endl;
     if(!pmt::is_symbol(port_id)) {
       throw std::runtime_error("message_port_register_in: bad port id");
     }
@@ -115,6 +116,7 @@ namespace gr {
   void
   basic_block::message_port_register_out(pmt::pmt_t port_id)
   {
+    //std::cout << name() << "<" << unique_id() << "> registering out:" << port_id << std::endl;
     if(!pmt::is_symbol(port_id)) {
       throw std::runtime_error("message_port_register_out: bad port id");
     }
@@ -122,6 +124,7 @@ namespace gr {
       throw std::runtime_error("message_port_register_out: port already in use");
     }
     d_message_subscribers = pmt::dict_add(d_message_subscribers, port_id, pmt::PMT_NIL);
+    //std::cout << name() << "<" << unique_id() << ">: " << d_message_subscribers << std::endl;
   }
 
   pmt::pmt_t
