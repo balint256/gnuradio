@@ -11,19 +11,31 @@
 	<import>import threading</import>
 	<var_make>self.$(id) = $(id) = $value</var_make>
 	<make>#slurp
+if $poll_rate > 0:
+    self._$(id)_poll_rate = $poll_rate
+else:
+    self._$(id)_poll_rate = 1
+self._$(id)_enabled = $poll_rate > 0
+def _set_$(id)_poll_rate(rate):
+    self._$(id)_enabled = rate > 0
+    if rate > 0:
+        self._$(id)_poll_rate = rate
+self.set_$(id)_poll_rate = _set_$(id)_poll_rate
 def _$(id)_probe():
     while True:
-        #set $obj = 'self' + ('.' + $block_id() if $block_id() else '')
-        val = $(obj).$(function_name())($(function_args()))
-        try:
-            self.set_$(id)(val)
-        except AttributeError:
-            pass
-        time.sleep(1.0 / ($poll_rate))
+        if self._$(id)_enabled:
+            #set $obj = 'self' + ('.' + $block_id() if $block_id() else '')
+            val = $(obj).$(function_name())($(function_args()))
+            try:
+                self.set_$(id)(val)
+            except AttributeError:
+                pass
+        time.sleep(1.0/(self._$(id)_poll_rate))
 _$(id)_thread = threading.Thread(target=_$(id)_probe)
 _$(id)_thread.daemon = True
 _$(id)_thread.start()</make>
 	<callback>self.set_$(id)($value)</callback>
+	<callback>self.set_$(id)_poll_rate($poll_rate)</callback>
 	<param>
 		<name>Value</name>
 		<key>value</key>
