@@ -8,7 +8,11 @@
   <name>PDU to Tagged Stream</name>
   <key>blocks_pdu_to_tagged_stream</key>
   <import>from gnuradio import blocks</import>
-  <make>blocks.pdu_to_tagged_stream($type.tv, $tag, $sleep_duration)</make>
+  <make>blocks.pdu_to_tagged_stream($type.tv, $tag,#slurp
+#if $sleep_duration() > 0
+   $sleep_duration#slurp
+#end if
+)</make>
   <param>
     <name>Item Type</name>
     <key>type</key>
