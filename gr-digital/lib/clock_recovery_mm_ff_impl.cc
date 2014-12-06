@@ -151,6 +151,10 @@ namespace gr {
 	  else
 	    produce(1, oo);
       }
+      if (omega_out != NULL)
+	produce(2, oo);
+      if (mu_out != NULL)
+	produce(3, oo);
       return WORK_CALLED_PRODUCE;
     }
 
