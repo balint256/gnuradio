@@ -42,7 +42,25 @@ namespace gr {
      * \ingroup qtgui_blk
      *
      * \details
-     * Number sink
+     *
+     * Displays the data stream in as a number in a simple text box
+     * GUI along with an optional bar graph. The bar graph can be set
+     * to horizontal (NUM_GRAPH_HORIZ), vertical (NUM_GRAPH_VERT), or
+     * no graph (NUM_GRAPH_NONE).
+     *
+     * The displayed value can be the average of the input stream, in
+     * which case all items received are averaged. If not averaging,
+     * the display simply samples a value in the data stream based on
+     * the update time of this block.
+     *
+     * Note that due to a flaw in the implementation, this block
+     * cannot receive integer value inputs. It will take chars,
+     * shorts, and floats and properly convert them by setting
+     * itemsize of the constructor to one of these three values
+     * (sizeof_char, sizeof_short, and sizeof_float, respectively). If
+     * using integers, the block treats these as floats. Instead, put
+     * the integer input stream through an gr::blocks::int_to_float
+     * converter block.
      */
     class QTGUI_API number_sink : virtual public sync_block
     {
@@ -85,6 +103,9 @@ namespace gr {
       virtual void set_label(int which, const std::string &label) = 0;
       virtual void set_min(int which, float min) = 0;
       virtual void set_max(int which, float max) = 0;
+      virtual void set_title(const std::string &title) = 0;
+      virtual void set_unit(int which, const std::string &unit) = 0;
+      virtual void set_factor(int which, float factor) = 0;
 
       virtual float average() const = 0;
       virtual graph_t graph_type() const = 0;
@@ -93,6 +114,9 @@ namespace gr {
       virtual std::string label(int which) const = 0;
       virtual float min(int which) const = 0;
       virtual float max(int which) const = 0;
+      virtual std::string title() const = 0;
+      virtual std::string unit(int which) const = 0;
+      virtual float factor(int which) const = 0;
 
       virtual void enable_menu(bool en=true) = 0;
       virtual void enable_autoscale(bool en=true) = 0;

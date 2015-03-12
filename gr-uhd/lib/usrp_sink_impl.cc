@@ -25,10 +25,11 @@
 #include "usrp_sink_impl.h"
 #include "gr_uhd_common.h"
 #include <gnuradio/io_signature.h>
-#include <boost/make_shared.hpp>
 
 namespace gr {
   namespace uhd {
+
+    static const size_t ALL_CHANS = ::uhd::usrp::multi_usrp::ALL_CHANS;
 
     usrp_sink::sptr
     usrp_sink::make(const ::uhd::device_addr_t &device_addr,
@@ -68,42 +69,56 @@ namespace gr {
       : sync_block("gr uhd usrp sink",
                       args_to_io_sig(stream_args),
                       io_signature::make(0, 0, 0)),
-        _stream_args(stream_args),
-        _nchan(stream_args.channels.size()),
-        _stream_now(_nchan == 1 and length_tag_name.empty()),
-        _start_time_set(false),
+        usrp_common_impl(device_addr, stream_args, length_tag_name),
         _length_tag_key(length_tag_name.empty() ? pmt::PMT_NIL : pmt::string_to_symbol(length_tag_name)),
         _nitems_to_send(0),
-	_curr_freq(stream_args.channels.size(), 0.0),
-	_curr_lo_offset(stream_args.channels.size(), 0.0),
-	_curr_gain(stream_args.channels.size(), 0.0),
-	_chans_to_tune(stream_args.channels.size(), false),
-	_call_tune(false),
+        _curr_freq(stream_args.channels.size(), 0.0),
+        _curr_lo_offset(stream_args.channels.size(), 0.0),
+        _curr_gain(stream_args.channels.size(), 0.0),
+        _chans_to_tune(stream_args.channels.size())
         _ignore_samples(false),
         _send_flush(false),
         _ignored_sample_count(0),
-	_stream_immediately(stream_immediately),
-	_initial_start(false)
+        _stream_immediately(stream_immediately),
+        _initial_start(false)
     {
       message_port_register_out(MSG_CTL_PORT_ID);
-      
-      if(stream_args.cpu_format == "fc32")
-        _type = boost::make_shared< ::uhd::io_type_t >(::uhd::io_type_t::COMPLEX_FLOAT32);
-      if(stream_args.cpu_format == "sc16")
-        _type = boost::make_shared< ::uhd::io_type_t >(::uhd::io_type_t::COMPLEX_INT16);
-      _dev = ::uhd::usrp::multi_usrp::make(device_addr);
 
       message_port_register_in(pmt::mp("command"));
       set_msg_handler(
-	  pmt::mp("command"),
-	  boost::bind(&usrp_sink_impl::msg_handler_command, this, _1)
+          pmt::mp("command"),
+          boost::bind(&usrp_sink_impl::msg_handler_command, this, _1)
       );
-      //message_port_register_in(pmt::mp("query"));
-      //set_msg_handler(
-	  //pmt::mp("query"),
-	  //boost::bind(&usrp_sink_impl::msg_handler_query, this, _1)
-      //);
+
+      _check_sensors_locked();
     }
+
+    bool usrp_sink_impl::_check_sensors_locked()
+    {
+      bool clocks_locked = true;
+
+      // Check ref lock for all mboards
+      for (size_t mboard_index = 0; mboard_index < _dev->get_num_mboards(); mboard_index++) {
+        std::string sensor_name = "ref_locked";
+        if (_dev->get_clock_source(mboard_index) == "internal") {
+          continue;
+        }
+        else if (_dev->get_clock_source(mboard_index) == "mimo") {
+          sensor_name = "mimo_locked";
+        }
+        if (not _wait_for_locked_sensor(
+                get_mboard_sensor_names(mboard_index),
+                sensor_name,
+                boost::bind(&usrp_sink_impl::get_mboard_sensor, this, _1, mboard_index)
+            )) {
+          GR_LOG_WARN(d_logger, boost::format("Sensor '%s' failed to lock within timeout on motherboard %d.") % sensor_name % mboard_index);
+          clocks_locked = false;
+        }
+      }
+
+      return clocks_locked;
+    }
+
 
     usrp_sink_impl::~usrp_sink_impl()
     {
@@ -555,6 +570,7 @@ namespace gr {
         _ignored_sample_count += ninput_items;
         //std::cout << boost::format("[%s<%d>] Ignored %llu samples") % name() % unique_id() % _ignored_sample_count << std::endl;
         _ignore_samples = false;
+        assert(ninput_items == 1);
         return ninput_items;  // Will be 1
       }
       
@@ -610,7 +626,7 @@ namespace gr {
 #endif
 
       //if using length_tags, decrement items left to send by the number of samples sent
-      if(not pmt::is_null(_length_tag_key) and _nitems_to_send > 0) {
+      if(not pmt::is_null(_length_tag_key) && _nitems_to_send > 0) {
         _nitems_to_send -= long(num_sent);
       }
 
@@ -618,9 +634,12 @@ namespace gr {
       _metadata.time_spec += ::uhd::time_spec_t(0, num_sent, _sample_rate);
 
       // Some post-processing tasks if we actually transmitted the entire burst
-      if (_call_tune and num_sent == size_t(ninput_items)) {
-	_set_center_freq_from_internals_allchans();
-	_call_tune = false;
+      if (not _pending_cmds.empty() && num_sent == size_t(ninput_items)) {
+        GR_LOG_DEBUG(d_debug_logger, boost::format("Executing %d pending commands.") % _pending_cmds.size());
+        BOOST_FOREACH(const pmt::pmt_t &cmd_pmt, _pending_cmds) {
+          msg_handler_command(cmd_pmt);
+        }
+        _pending_cmds.clear();
       }
 
       return num_sent;
@@ -642,10 +661,9 @@ namespace gr {
       // Go through tag list until something indicates the end of a burst.
       bool found_time_tag = false;
       bool found_eob = false;
-      bool found_freq_tag_in_burst = false;
-      uint64_t freq_cmd_offset = 0;
-      double freq_cmd_freq;
-      int freq_cmd_chan;
+      // For commands that are in the middle in the burst:
+      std::vector<pmt::pmt_t> commands_in_burst; // Store the command
+      uint64_t in_burst_cmd_offset = 0; // Store its position
       BOOST_FOREACH(const tag_t &my_tag, _tags) {
         const uint64_t my_tag_count = my_tag.offset;
         const pmt::pmt_t &key = my_tag.key;
@@ -662,11 +680,7 @@ namespace gr {
           //_ignored_sample_count = 0;
         }
 
-	else if (not pmt::is_null(_length_tag_key) and my_tag_count > samp0_count + _nitems_to_send) {
-          break;
-	}
-
-        /* I. Bursts that can only be on the first sample of burst
+        /* I. Tags that can only be on the first sample of a burst
          *
          * This includes:
          * - tx_time
@@ -691,7 +705,7 @@ namespace gr {
             max_count = my_tag_count;
             break;
           }
-	  found_time_tag = true;
+          found_time_tag = true;
           _metadata.has_time_spec = true;
           _metadata.time_spec = ::uhd::time_spec_t
             (pmt::to_uint64(pmt::tuple_ref(value, 0)),
@@ -699,94 +713,91 @@ namespace gr {
         }
 
         //set the start of burst flag in the metadata; ignore if length_tag_key is not null
-        else if(pmt::is_null(_length_tag_key) and pmt::equal(key, SOB_KEY)) {
+        else if(pmt::is_null(_length_tag_key) && pmt::equal(key, SOB_KEY)) {
           if (my_tag.offset != samp0_count) {
             max_count = my_tag_count;
             break;
           }
-	  // Bursty tx will not use time specs, unless a tx_time tag is also given.
-	  _metadata.has_time_spec = false;
+          // Bursty tx will not use time specs, unless a tx_time tag is also given.
+          _metadata.has_time_spec = false;
           _metadata.start_of_burst = pmt::to_bool(value);
         }
 
         //length_tag found; set the start of burst flag in the metadata
-        else if(not pmt::is_null(_length_tag_key) and pmt::equal(key, _length_tag_key)) {
+        else if(not pmt::is_null(_length_tag_key) && pmt::equal(key, _length_tag_key)) {
           if (my_tag_count != samp0_count) {
             max_count = my_tag_count;
-	    break;
+            break;
           }
           //If there are still items left to send, the current burst has been preempted.
           //Set the items remaining counter to the new burst length. Notify the user of
           //the tag preemption.
-	  else if(_nitems_to_send > 0) {
+          else if(_nitems_to_send > 0) {
               std::cerr << "tP" << std::flush;
           }
           _nitems_to_send = pmt::to_long(value);
           _metadata.start_of_burst = true;
         }
 
-        /* II. Bursts that can be on the first OR last sample of a burst
+        /* II. Tags that can be on the first OR last sample of a burst
          *
          * This includes:
-         * - tx_freq (tags that don't actually change the frequency are ignored)
+         * - tx_freq
          *
          * With these tags, we check if they're at the start of a burst, and do
          * the appropriate action. Otherwise, make sure the corresponding sample
          * is the last one.
          */
-	else if (pmt::equal(key, FREQ_KEY) and my_tag_count == samp0_count) {
-          int chan = pmt::to_long(pmt::tuple_ref(value, 0));
-          double new_freq = pmt::to_double(pmt::tuple_ref(value, 1));
-          if (new_freq != _curr_freq[chan]) {
-	      _curr_freq[chan] = new_freq;
-	      _set_center_freq_from_internals(chan);
-	  }
-	}
-
-        else if(pmt::equal(key, FREQ_KEY) and not found_freq_tag_in_burst) {
-          int chan = pmt::to_long(pmt::tuple_ref(value, 0));
-          double new_freq = pmt::to_double(pmt::tuple_ref(value, 1));
-          if (new_freq != _curr_freq[chan]) {
-	    freq_cmd_freq = new_freq;
-            freq_cmd_chan = chan;
-	    freq_cmd_offset = my_tag_count;
-	    max_count = my_tag_count + 1;
-	    found_freq_tag_in_burst = true;
-          }
+        else if (pmt::equal(key, FREQ_KEY) && my_tag_count == samp0_count) {
+          // If it's on the first sample, immediately do the tune:
+          GR_LOG_DEBUG(d_debug_logger, boost::format("Received tx_freq on start of burst."));
+          msg_handler_command(pmt::cons(pmt::mp("freq"), value));
+        }
+        else if(pmt::equal(key, FREQ_KEY)) {
+          // If it's not on the first sample, queue this command and only tx until here:
+          GR_LOG_DEBUG(d_debug_logger, boost::format("Received tx_freq mid-burst."));
+          commands_in_burst.push_back(pmt::cons(pmt::mp("freq"), value));
+          max_count = my_tag_count + 1;
+          in_burst_cmd_offset = my_tag_count;
         }
 
-        /* III. Bursts that can only be on the last sample of a burst
+        /* III. Tags that can only be on the last sample of a burst
          *
          * This includes:
          * - tx_eob
          *
          * Make sure that no more samples are allowed through.
          */
-        else if(pmt::is_null(_length_tag_key) and pmt::equal(key, EOB_KEY)) {
+        else if(pmt::is_null(_length_tag_key) && pmt::equal(key, EOB_KEY)) {
           found_eob = true;
           max_count = my_tag_count + 1;
           _metadata.end_of_burst = pmt::to_bool(value);
         }
       } // end foreach
 
-      if(not pmt::is_null(_length_tag_key) and long(max_count - samp0_count) == _nitems_to_send) {
+      if(not pmt::is_null(_length_tag_key) && long(max_count - samp0_count) == _nitems_to_send) {
         found_eob = true;
       }
-      
-      if (found_freq_tag_in_burst) {
+
+      // If a command was found in-burst that may appear at the end of burst,
+      // there's two options:
+      // 1) The command was actually on the last sample (eob). Then, stash the
+      //    commands for running after work().
+      // 2) The command was not on the last sample. In this case, only send()
+      //    until before the tag, so it will be on the first sample of the next run.
+      if (not commands_in_burst.empty()) {
         if (not found_eob) {
           // If it's in the middle of a burst, only send() until before the tag
-          max_count = freq_cmd_offset;
-        } else if (freq_cmd_offset < max_count) {
-          // Otherwise, tune after work()
-	  _curr_freq[freq_cmd_chan] = freq_cmd_freq;
-	  _chans_to_tune[freq_cmd_chan] = true;
-          _call_tune = true;
+          max_count = in_burst_cmd_offset;
+        } else if (in_burst_cmd_offset < max_count) {
+          BOOST_FOREACH(const pmt::pmt_t &cmd_pmt, commands_in_burst) {
+            _pending_cmds.push_back(cmd_pmt);
+          }
         }
       }
 
       if (found_time_tag) {
-	_metadata.has_time_spec = true;
+        _metadata.has_time_spec = true;
       }
 
       // Only transmit up to and including end of burst,
@@ -830,7 +841,7 @@ namespace gr {
       _metadata.start_of_burst = true;
       _metadata.end_of_burst = false;
       // Bursty tx will need to send a tx_time to activate time spec
-      _metadata.has_time_spec = not _stream_now and pmt::is_null(_length_tag_key);
+      _metadata.has_time_spec = !_stream_now && pmt::is_null(_length_tag_key);
       _nitems_to_send = 0;
       if(_start_time_set) {
         _start_time_set = false; //cleared for next run
@@ -874,46 +885,44 @@ namespace gr {
 
 
     /************** External interfaces (RPC + Message passing) ********************/
-    // Helper function for msg_handler_command: Extracts chan and command value from
-    // the 2-tuple in cmd_val, updates the value in vector_to_update[chan] and returns
-    // true if it was different from the old value.
-    bool _unpack_chan_command(pmt::pmt_t &cmd_val, int &chan, std::vector<double> &vector_to_update)
-    {
-      chan = pmt::to_long(pmt::tuple_ref(cmd_val, 0));
-      double new_value = pmt::to_double(pmt::tuple_ref(cmd_val, 1));
-      if (new_value == vector_to_update[chan]) {
-	return false;
-      } else {
-	vector_to_update[chan] = new_value;
-	return true;
-      }
-    }
-
     void usrp_sink_impl::msg_handler_command(pmt::pmt_t msg)
     {
-      const std::string command(pmt::symbol_to_string(pmt::car(msg)));
-      pmt::pmt_t value(pmt::cdr(msg));
-      int chan = 0;
-      if (command == "freq") {
-	if (_unpack_chan_command(value, chan, _curr_freq)) {
-	  _set_center_freq_from_internals(chan);
-	}
-      } else if (command == "lo_offset") {
-	if (_unpack_chan_command(value, chan, _curr_lo_offset)) {
-	  _set_center_freq_from_internals(chan);
-	}
-      } else if (command == "gain") {
-	if (_unpack_chan_command(value, chan, _curr_gain)) {
-	  set_gain(_curr_gain[chan], chan);
-	}
-      } else {
-	GR_LOG_ALERT(d_logger, boost::format("Received unknown command: %s") % command);
+      std::string command;
+      pmt::pmt_t cmd_value;
+      int chan = -1;
+      if (not _unpack_chan_command(command, cmd_value, chan, msg)) {
+        GR_LOG_ALERT(d_logger, boost::format("Error while unpacking command PMT: %s") % msg);
+        return;
       }
-    }
-
-    void usrp_sink_impl::msg_handler_query(pmt::pmt_t msg)
-    {
-      //tbi
+      GR_LOG_DEBUG(d_debug_logger, boost::format("Received command: %s") % command);
+      try {
+        if (command == "freq") {
+          _chans_to_tune = _update_vector_from_cmd_val<double>(
+              _curr_freq, chan, pmt::to_double(cmd_value), true
+          );
+          _set_center_freq_from_internals_allchans();
+        } else if (command == "lo_offset") {
+          _chans_to_tune = _update_vector_from_cmd_val<double>(
+              _curr_lo_offset, chan, pmt::to_double(cmd_value), true
+          );
+          _set_center_freq_from_internals_allchans();
+        } else if (command == "gain") {
+          boost::dynamic_bitset<> chans_to_change = _update_vector_from_cmd_val<double>(
+              _curr_gain, chan, pmt::to_double(cmd_value), true
+          );
+          if (chans_to_change.any()) {
+            for (size_t i = 0; i < chans_to_change.size(); i++) {
+              if (chans_to_change[i]) {
+                set_gain(_curr_gain[i], i);
+              }
+            }
+          }
+        } else {
+          GR_LOG_ALERT(d_logger, boost::format("Received unknown command: %s") % command);
+        }
+      } catch (pmt::wrong_type &e) {
+        GR_LOG_ALERT(d_logger, boost::format("Received command '%s' with invalid command value: %s") % command % cmd_value);
+      }
     }
 
     void

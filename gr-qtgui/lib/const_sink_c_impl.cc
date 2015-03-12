@@ -115,8 +115,10 @@ namespace gr {
 	d_qApplication = qApp;
       }
       else {
+#if QT_VERSION >= 0x040500
         std::string style = prefs::singleton()->get_string("qtgui", "style", "raster");
         QApplication::setGraphicsSystem(QString(style.c_str()));
+#endif
 	d_qApplication = new QApplication(d_argc, &d_argv);
       }
 
@@ -129,6 +131,10 @@ namespace gr {
 
       d_main_gui = new ConstellationDisplayForm(d_nconnections, d_parent);
       d_main_gui->setNPoints(d_size);
+
+      if(d_name.size() > 0)
+        set_title(d_name);
+
       // initialize update time to 10 times a second
       set_update_time(0.1);
     }
@@ -232,7 +238,7 @@ namespace gr {
 					int channel,
 					const std::string &tag_key)
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
 
       d_trigger_mode = mode;
       d_trigger_slope = slope;
@@ -302,7 +308,7 @@ namespace gr {
     void
     const_sink_c_impl::set_nsamps(const int newsize)
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
 
       if(newsize != d_size) {
 	// Set new size and reset buffer index
@@ -325,6 +331,7 @@ namespace gr {
 	}
 
 	d_main_gui->setNPoints(d_size);
+        _reset();
       }
     }
 
@@ -347,9 +354,15 @@ namespace gr {
     }
 
     void
+    const_sink_c_impl::enable_grid(bool en)
+    {
+      d_main_gui->setGrid(en);
+    }
+
+    void
     const_sink_c_impl::reset()
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
       _reset();
     }
 
@@ -485,7 +498,7 @@ namespace gr {
       d_index += nitems;
 
 
-      // If we've have a trigger and a full d_size of items in the buffers, plot.
+      // If we have a trigger and a full d_size of items in the buffers, plot.
       if((d_triggered) && (d_index == d_end)) {
         // Copy data to be plotted to start of buffers.
         for(n = 0; n < d_nconnections; n++) {

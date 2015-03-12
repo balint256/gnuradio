@@ -65,7 +65,7 @@ class control_panel(wx.Panel):
 	def __init__(self, parent):
 		"""
 		Create a new control panel.
-		
+
 		Args:
 		    parent: the wx parent window
 		"""
@@ -344,7 +344,7 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		If real, keep take only the positive bins.
 		Plot the samples onto the grid as channel 1.
 		If peak hold is enabled, plot peak vals as channel 2.
-		
+
 		Args:
 		    msg: the fft array as a character array
 		"""
@@ -353,8 +353,8 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		samples = numpy.fromstring(msg, numpy.float32)[:self.fft_size] #only take first frame
 		num_samps = len(samples)
 		#reorder fft
-		if self.real: samples = samples[:(num_samps+1)/2]
-		else: samples = numpy.concatenate((samples[num_samps/2+1:], samples[:(num_samps+1)/2]))
+		if self.real: samples = samples[:(num_samps+2)/2]
+		else: samples = numpy.concatenate((samples[(num_samps+1)/2:], samples[:(num_samps+2)/2]))
 		self.samples = samples
 		#peak hold calculation
 		if self[PEAK_HOLD_KEY]:
@@ -424,6 +424,6 @@ class fft_window(wx.Panel, pubsub.pubsub):
 		#update y grid
 		self.plotter.set_y_grid(ref_level-y_per_div*y_divs, ref_level, y_per_div)
 		#update y units
-		self.plotter.set_y_label('Amplitude', 'dB')
+		self.plotter.set_y_label('Power', 'dB')
 		#update plotter
 		self.plotter.update()

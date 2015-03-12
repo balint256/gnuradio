@@ -1,3 +1,25 @@
+/* -*- c++ -*- */
+/*
+ * Copyright 2014 Free Software Foundation, Inc.
+ *
+ * This file is part of GNU Radio
+ *
+ * GNU Radio is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ *
+ * GNU Radio is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with GNU Radio; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
+ */
+
 #ifndef INCLUDED_volk_16i_max_star_16i_a_H
 #define INCLUDED_volk_16i_max_star_16i_a_H
 
@@ -84,6 +106,44 @@ static inline  void volk_16i_max_star_16i_a_ssse3(short* target, short* src0, un
 }
 
 #endif /*LV_HAVE_SSSE3*/
+
+#ifdef LV_HAVE_NEON
+#include <arm_neon.h>
+static inline void volk_16i_max_star_16i_neon(short* target, short* src0, unsigned int num_points) {
+    const unsigned int eighth_points = num_points / 8;
+    unsigned number;
+    int16x8_t input_vec;
+    int16x8_t diff, zeros;
+    uint16x8_t comp1, comp2;
+    zeros = veorq_s16(zeros, zeros);
+
+    int16x8x2_t tmpvec;
+
+    int16x8_t candidate_vec = vld1q_dup_s16(src0 );
+    short candidate;
+    ++src0;
+
+    for(number=0; number < eighth_points; ++number) {
+        input_vec = vld1q_s16(src0);
+        __builtin_prefetch(src0+16);
+        diff = vsubq_s16(candidate_vec, input_vec);
+        comp1 = vcgeq_s16(diff, zeros);
+        comp2 = vcltq_s16(diff, zeros);
+
+        tmpvec.val[0] = vandq_s16(candidate_vec, (int16x8_t)comp1);
+        tmpvec.val[1] = vandq_s16(input_vec, (int16x8_t)comp2);
+
+        candidate_vec = vaddq_s16(tmpvec.val[0], tmpvec.val[1]);
+        src0 += 8;
+    }
+        vst1q_s16(&candidate, candidate_vec);
+
+    for(number=0; number < num_points%8; number++) {
+        candidate = ((int16_t)(candidate - src0[number]) > 0) ? candidate : src0[number];
+    }
+    target[0] = candidate;
+}
+#endif /*LV_HAVE_NEON*/
 
 #ifdef LV_HAVE_GENERIC
 

@@ -25,18 +25,15 @@
 
 #include <gnuradio/qtgui/time_sink_f.h>
 #include <gnuradio/qtgui/timedisplayform.h>
-#include <gnuradio/thread/thread.h>
 #include <gnuradio/high_res_timer.h>
 
 namespace gr {
   namespace qtgui {
-    
+
     class QTGUI_API time_sink_f_impl : public time_sink_f
     {
     private:
       void initialize();
-
-      gr::thread::mutex d_mutex;
 
       int d_size, d_buffer_size;
       double d_samp_rate;
@@ -93,6 +90,8 @@ namespace gr {
 #endif
 
       void set_y_axis(double min, double max);
+      void set_y_label(const std::string &label,
+                       const std::string &unit="");
       void set_update_time(double t);
       void set_title(const std::string &title);
       void set_line_label(int which, const std::string &label);

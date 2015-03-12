@@ -48,7 +48,7 @@ class WaterfallDisplayPlot: public DisplayPlot
   Q_PROPERTY ( int intensity_color_map_type1 READ getIntensityColorMapType1 WRITE setIntensityColorMapType1 )
   Q_PROPERTY ( QColor low_intensity_color READ getUserDefinedLowIntensityColor WRITE setUserDefinedLowIntensityColor )
   Q_PROPERTY ( QColor high_intensity_color READ getUserDefinedHighIntensityColor WRITE setUserDefinedHighIntensityColor )
-  
+
 
 public:
   WaterfallDisplayPlot(int nplots, QWidget*);
@@ -95,6 +95,7 @@ public slots:
   void setIntensityColorMapType1(int);
   void setUserDefinedLowIntensityColor(QColor);
   void setUserDefinedHighIntensityColor(QColor);
+  void setPlotPosHalf(bool half);
 
 signals:
   void updatedLowerIntensityLevel(const double);
@@ -106,6 +107,7 @@ private:
   double d_start_frequency;
   double d_stop_frequency;
   int    d_xaxis_multiplier;
+  bool   d_half_freq;
 
   std::vector<WaterfallData*> d_data;
 

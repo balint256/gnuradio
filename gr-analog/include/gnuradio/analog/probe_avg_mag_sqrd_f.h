@@ -28,7 +28,7 @@
 
 namespace gr {
   namespace analog {
-    
+
     /*!
      * \brief compute avg magnitude squared.
      * \ingroup measurement_tools_blk
@@ -62,6 +62,7 @@ namespace gr {
 
       virtual void set_alpha (double alpha) = 0;
       virtual void set_threshold (double decibels) = 0;
+      virtual void reset() = 0;
     };
 
   } /* namespace analog */

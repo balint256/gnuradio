@@ -47,6 +47,9 @@
 #include "gnuradio/blocks/max_ff.h"
 #include "gnuradio/blocks/max_ii.h"
 #include "gnuradio/blocks/max_ss.h"
+#include "gnuradio/blocks/min_ff.h"
+#include "gnuradio/blocks/min_ii.h"
+#include "gnuradio/blocks/min_ss.h"
 #include "gnuradio/blocks/moving_average_cc.h"
 #include "gnuradio/blocks/moving_average_ff.h"
 #include "gnuradio/blocks/moving_average_ii.h"
@@ -64,6 +67,7 @@
 #include "gnuradio/blocks/multiply_const_vii.h"
 #include "gnuradio/blocks/multiply_const_vff.h"
 #include "gnuradio/blocks/multiply_const_vcc.h"
+#include "gnuradio/blocks/multiply_matrix_ff.h"
 #include "gnuradio/blocks/mute_ss.h"
 #include "gnuradio/blocks/mute_ii.h"
 #include "gnuradio/blocks/mute_ff.h"
@@ -89,6 +93,9 @@
 %include "gnuradio/blocks/max_ff.h"
 %include "gnuradio/blocks/max_ii.h"
 %include "gnuradio/blocks/max_ss.h"
+%include "gnuradio/blocks/min_ff.h"
+%include "gnuradio/blocks/min_ii.h"
+%include "gnuradio/blocks/min_ss.h"
 %include "gnuradio/blocks/moving_average_cc.h"
 %include "gnuradio/blocks/moving_average_ff.h"
 %include "gnuradio/blocks/moving_average_ii.h"
@@ -106,6 +113,7 @@
 %include "gnuradio/blocks/multiply_const_vii.h"
 %include "gnuradio/blocks/multiply_const_vff.h"
 %include "gnuradio/blocks/multiply_const_vcc.h"
+%include "gnuradio/blocks/multiply_matrix_ff.h"
 %include "gnuradio/blocks/mute_ss.h"
 %include "gnuradio/blocks/mute_ii.h"
 %include "gnuradio/blocks/mute_ff.h"
@@ -130,6 +138,9 @@ GR_SWIG_BLOCK_MAGIC2(blocks, lfsr_32k_source_s);
 GR_SWIG_BLOCK_MAGIC2(blocks, max_ff);
 GR_SWIG_BLOCK_MAGIC2(blocks, max_ii);
 GR_SWIG_BLOCK_MAGIC2(blocks, max_ss);
+GR_SWIG_BLOCK_MAGIC2(blocks, min_ff);
+GR_SWIG_BLOCK_MAGIC2(blocks, min_ii);
+GR_SWIG_BLOCK_MAGIC2(blocks, min_ss);
 GR_SWIG_BLOCK_MAGIC2(blocks, moving_average_cc);
 GR_SWIG_BLOCK_MAGIC2(blocks, moving_average_ff);
 GR_SWIG_BLOCK_MAGIC2(blocks, moving_average_ii);
@@ -147,6 +158,7 @@ GR_SWIG_BLOCK_MAGIC2(blocks, multiply_const_vss);
 GR_SWIG_BLOCK_MAGIC2(blocks, multiply_const_vii);
 GR_SWIG_BLOCK_MAGIC2(blocks, multiply_const_vff);
 GR_SWIG_BLOCK_MAGIC2(blocks, multiply_const_vcc);
+GR_SWIG_BLOCK_MAGIC2(blocks, multiply_matrix_ff);
 GR_SWIG_BLOCK_MAGIC2(blocks, mute_ss);
 GR_SWIG_BLOCK_MAGIC2(blocks, mute_ii);
 GR_SWIG_BLOCK_MAGIC2(blocks, mute_ff);

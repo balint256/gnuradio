@@ -22,7 +22,7 @@ pygtk.require('2.0')
 import gtk
 from Dialogs import MessageDialogHelper
 from Constants import \
-    DEFAULT_FILE_PATH, IMAGE_FILE_EXTENSION, \
+    DEFAULT_FILE_PATH, IMAGE_FILE_EXTENSION, TEXT_FILE_EXTENSION, \
     NEW_FLOGRAPH_TITLE
 import Preferences
 from os import path
@@ -33,6 +33,7 @@ import Utils
 ##################################################
 OPEN_FLOW_GRAPH = 'open flow graph'
 SAVE_FLOW_GRAPH = 'save flow graph'
+SAVE_REPORTS = 'save reports'
 SAVE_IMAGE = 'save image'
 
 FILE_OVERWRITE_MARKUP_TMPL="""\
@@ -49,6 +50,12 @@ def get_flow_graph_files_filter():
     filter = gtk.FileFilter()
     filter.set_name('Flow Graph Files')
     filter.add_pattern('*'+Preferences.file_extension())
+    return filter
+
+def get_text_files_filter():
+    filter = gtk.FileFilter()
+    filter.set_name('Text Files')
+    filter.add_pattern('*'+TEXT_FILE_EXTENSION)
     return filter
 
 ##the filter for image files
@@ -79,7 +86,7 @@ class FileDialogHelper(gtk.FileChooserDialog):
         FileDialogHelper contructor.
         Create a save or open dialog with cancel and ok buttons.
         Use standard settings: no multiple selection, local files only, and the * filter.
-        
+
         Args:
             action: gtk.FILE_CHOOSER_ACTION_OPEN or gtk.FILE_CHOOSER_ACTION_SAVE
             title: the title of the dialog (string)
@@ -96,7 +103,7 @@ class FileDialog(FileDialogHelper):
     def __init__(self, current_file_path=''):
         """
         FileDialog constructor.
-        
+
         Args:
             current_file_path: the current directory or path to the open flow graph
         """
@@ -108,7 +115,12 @@ class FileDialog(FileDialogHelper):
         elif self.type == SAVE_FLOW_GRAPH:
             FileDialogHelper.__init__(self, gtk.FILE_CHOOSER_ACTION_SAVE, 'Save a Flow Graph to a File...')
             self.add_and_set_filter(get_flow_graph_files_filter())
-            self.set_current_name(path.basename(current_file_path)) #show the current filename
+            self.set_current_name(path.basename(current_file_path))
+        elif self.type == SAVE_REPORTS:
+            FileDialogHelper.__init__(self, gtk.FILE_CHOOSER_ACTION_SAVE, 'Save Reports to a File...')
+            self.add_and_set_filter(get_text_files_filter())
+            file_path = path.splitext(path.basename(current_file_path))[0]
+            self.set_current_name(file_path) #show the current filename
         elif self.type == SAVE_IMAGE:
             FileDialogHelper.__init__(self, gtk.FILE_CHOOSER_ACTION_SAVE, 'Save a Flow Graph Screen Shot...')
             self.add_and_set_filter(get_image_files_filter())
@@ -119,7 +131,7 @@ class FileDialog(FileDialogHelper):
     def add_and_set_filter(self, filter):
         """
         Add the gtk file filter to the list of filters and set it as the default file filter.
-        
+
         Args:
             filter: a gtk file filter.
         """
@@ -132,7 +144,7 @@ class FileDialog(FileDialogHelper):
         If this is a save dialog and the file name is missing the extension, append the file extension.
         If the file name with the extension already exists, show a overwrite dialog.
         If this is an open dialog, return a list of filenames.
-        
+
         Returns:
             the complete file path
         """
@@ -140,10 +152,11 @@ class FileDialog(FileDialogHelper):
         #############################################
         # Handle Save Dialogs
         #############################################
-        if self.type in (SAVE_FLOW_GRAPH, SAVE_IMAGE):
+        if self.type in (SAVE_FLOW_GRAPH, SAVE_REPORTS, SAVE_IMAGE):
             filename = self.get_filename()
             extension = {
                 SAVE_FLOW_GRAPH: Preferences.file_extension(),
+                SAVE_REPORTS: TEXT_FILE_EXTENSION,
                 SAVE_IMAGE: IMAGE_FILE_EXTENSION,
             }[self.type]
             #append the missing file extension if the filter matches
@@ -172,7 +185,7 @@ class FileDialog(FileDialogHelper):
     def run(self):
         """
         Get the filename and destroy the dialog.
-        
+
         Returns:
             the filename or None if a close/cancel occured.
         """
@@ -182,4 +195,5 @@ class FileDialog(FileDialogHelper):
 
 class OpenFlowGraphFileDialog(FileDialog): type = OPEN_FLOW_GRAPH
 class SaveFlowGraphFileDialog(FileDialog): type = SAVE_FLOW_GRAPH
+class SaveReportsFileDialog(FileDialog): type = SAVE_REPORTS
 class SaveImageFileDialog(FileDialog): type = SAVE_IMAGE

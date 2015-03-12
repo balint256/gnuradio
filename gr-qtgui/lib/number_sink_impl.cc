@@ -30,6 +30,16 @@
 #include <volk/volk.h>
 #include <gnuradio/fft/fft.h>
 #include <qwt_symbol.h>
+#include <cmath>
+
+#ifdef _MSC_VER
+#define isfinite _finite
+
+#include <float.h>
+namespace std {
+    using ::_finite;
+}
+#endif
 
 namespace gr {
   namespace qtgui {
@@ -196,7 +206,25 @@ namespace gr {
     void
     number_sink_impl::set_max(int which, float max)
     {
-      return d_main_gui->setScaleMax(which, max);
+      d_main_gui->setScaleMax(which, max);
+    }
+
+    void
+    number_sink_impl::set_title(const std::string &title)
+    {
+      d_main_gui->setTitle(title);
+    }
+
+    void
+    number_sink_impl::set_unit(int which, const std::string &unit)
+    {
+      d_main_gui->setUnit(which, unit);
+    }
+
+    void
+    number_sink_impl::set_factor(int which, float factor)
+    {
+      d_main_gui->setFactor(which, factor);
     }
 
     float
@@ -241,6 +269,24 @@ namespace gr {
       return d_main_gui->scaleMax(which);
     }
 
+    std::string
+    number_sink_impl::title() const
+    {
+      return d_main_gui->title();
+    }
+
+    std::string
+    number_sink_impl::unit(int which) const
+    {
+      return d_main_gui->unit(which);
+    }
+
+    float
+    number_sink_impl::factor(int which) const
+    {
+      return d_main_gui->factor(which);
+    }
+
     void
     number_sink_impl::enable_menu(bool en)
     {
@@ -256,7 +302,7 @@ namespace gr {
     void
     number_sink_impl::reset()
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
       _reset();
     }
 
@@ -265,30 +311,70 @@ namespace gr {
     {
     }
 
+    void
+    number_sink_impl::_gui_update_trigger()
+    {
+      // Only update the time if different than the current interval
+      // add some slop in cpu ticks for double comparison
+      gr::high_res_timer_type tps = gr::high_res_timer_tps();
+      double t = d_main_gui->updateTime();
+      if((d_update_time < (tps*t-10)) || ((tps*t+10) < d_update_time)) {
+        set_update_time(t);
+      }
+
+      float a = d_main_gui->average();
+      if(a != d_average) {
+        set_average(a);
+      }
+    }
+
+    float
+    number_sink_impl::get_item(const void *input_items, int n)
+    {
+      char *inc;
+      short *ins;
+      float *inf;
+
+      switch(d_itemsize) {
+      case(1):
+        inc = (char*)input_items;
+        return static_cast<float>(inc[n]);
+        break;
+      case(2):
+        ins = (short*)input_items;
+        return static_cast<float>(ins[n]);
+        break;
+      case(4):
+        inf = (float*)input_items;
+        return static_cast<float>(inf[n]);
+        break;
+      default:
+        throw std::runtime_error("item size not supported");
+      }
+      return 0;
+    }
+
     int
     number_sink_impl::work(int noutput_items,
 			   gr_vector_const_void_star &input_items,
 			   gr_vector_void_star &output_items)
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
 
-      float new_avg = d_main_gui->average();
-      set_update_time(d_main_gui->updateTime());
-      if(new_avg != d_average) {
-        set_average(new_avg);
-      }
+      _gui_update_trigger();
 
       if(d_average > 0) {
         for(int n = 0; n < d_nconnections; n++) {
-          float *in = (float*)input_items[n];
           for(int i = 0; i < noutput_items; i++) {
-            d_avg_value[n] = d_iir[n].filter(in[i]);
+            float x = get_item(input_items[n], i);
+            if(std::isfinite(x))
+               d_avg_value[n] = d_iir[n].filter(x);
           }
         }
       }
 
       // Plot if we are able to update
-      if(gr::high_res_timer_now() - d_last_time > d_update_time) {
+      if((gr::high_res_timer_now() - d_last_time) > d_update_time) {
         d_last_time = gr::high_res_timer_now();
         std::vector<float> d(d_nconnections);
         if(d_average > 0) {
@@ -296,8 +382,11 @@ namespace gr {
             d[n] = d_avg_value[n];
         }
         else {
-          for(int n = 0; n < d_nconnections; n++)
-            d[n] = ((float*)input_items[n])[0];
+          for(int n = 0; n < d_nconnections; n++) {
+            float x = get_item(input_items[n], 0);
+            if(std::isfinite(x))
+               d[n] = x;
+          }
         }
         d_qApplication->postEvent(d_main_gui,
                                   new NumberUpdateEvent(d));

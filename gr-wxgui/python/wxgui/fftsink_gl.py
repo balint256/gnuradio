@@ -159,7 +159,7 @@ class _fft_sink_base(gr.hier_block2, common.wxgui_hb):
 				connect_fn(self, self)
 			else:
 				connect_fn(fft, self)
-		
+
 	def set_callback(self,callb):
 		self.win.set_callback(callb)
 	

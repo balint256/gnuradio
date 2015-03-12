@@ -26,7 +26,6 @@
 #include <gnuradio/qtgui/number_sink.h>
 #include <gnuradio/qtgui/numberdisplayform.h>
 #include <gnuradio/filter/single_pole_iir.h>
-#include <gnuradio/thread/thread.h>
 #include <gnuradio/high_res_timer.h>
 
 namespace gr {
@@ -36,8 +35,6 @@ namespace gr {
     {
     private:
       void initialize();
-
-      gr::thread::mutex d_mutex;
 
       size_t d_itemsize;
       float d_average;
@@ -62,6 +59,8 @@ namespace gr {
       void _reset();
       void _npoints_resize();
       void _gui_update_trigger();
+
+      float get_item(const void *input_items, int n);
 
     public:
       number_sink_impl(size_t itemsize,
@@ -92,6 +91,9 @@ namespace gr {
       void set_label(int which, const std::string &label);
       void set_min(int which, float min);
       void set_max(int which, float max);
+      void set_title(const std::string &title);
+      void set_unit(int which, const std::string &unit);
+      void set_factor(int which, float factor);
 
       float average() const;
       graph_t graph_type() const;
@@ -100,6 +102,9 @@ namespace gr {
       std::string label(int which) const;
       float min(int which) const;
       float max(int which) const;
+      std::string title() const;
+      std::string unit(int which) const;
+      float factor(int which) const;
 
       void enable_menu(bool en);
       void enable_autoscale(bool en=true);

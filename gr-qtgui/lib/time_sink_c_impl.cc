@@ -113,8 +113,10 @@ namespace gr {
 	d_qApplication = qApp;
       }
       else {
+#if QT_VERSION >= 0x040500
         std::string style = prefs::singleton()->get_string("qtgui", "style", "raster");
         QApplication::setGraphicsSystem(QString(style.c_str()));
+#endif
 	d_qApplication = new QApplication(d_argc, &d_argv);
       }
 
@@ -128,6 +130,9 @@ namespace gr {
       d_main_gui = new TimeDisplayForm(d_nconnections, d_parent);
       d_main_gui->setNPoints(d_size);
       d_main_gui->setSampleRate(d_samp_rate);
+
+      if(d_name.size() > 0)
+        set_title(d_name);
 
       // initialize update time to 10 times a second
       set_update_time(0.1);
@@ -165,6 +170,13 @@ namespace gr {
     time_sink_c_impl::set_y_axis(double min, double max)
     {
       d_main_gui->setYaxis(min, max);
+    }
+
+    void
+    time_sink_c_impl::set_y_label(const std::string &label,
+                                  const std::string &unit)
+    {
+      d_main_gui->setYLabel(label, unit);
     }
 
     void
@@ -226,7 +238,7 @@ namespace gr {
                                        float delay, int channel,
                                        const std::string &tag_key)
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
 
       d_trigger_mode = mode;
       d_trigger_slope = slope;
@@ -306,7 +318,7 @@ namespace gr {
     time_sink_c_impl::set_nsamps(const int newsize)
     {
       if(newsize != d_size) {
-        gr::thread::scoped_lock lock(d_mutex);
+        gr::thread::scoped_lock lock(d_setlock);
 
 	// Set new size and reset buffer index
 	// (throws away any currently held data, but who cares?)
@@ -337,7 +349,7 @@ namespace gr {
     void
     time_sink_c_impl::set_samp_rate(const double samp_rate)
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
       d_samp_rate = samp_rate;
       d_main_gui->setSampleRate(d_samp_rate);
     }
@@ -399,7 +411,7 @@ namespace gr {
     void
     time_sink_c_impl::reset()
     {
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
       _reset();
     }
 
@@ -578,7 +590,7 @@ namespace gr {
       _npoints_resize();
       _gui_update_trigger();
 
-      gr::thread::scoped_lock lock(d_mutex);
+      gr::thread::scoped_lock lock(d_setlock);
 
       int nfill = d_end - d_index;                 // how much room left in buffers
       int nitems = std::min(noutput_items, nfill); // num items we can put in buffers
@@ -600,13 +612,13 @@ namespace gr {
         in = (const gr_complex*)input_items[idx];
         volk_32fc_deinterleave_64f_x2(&d_buffers[n][d_index],
                                       &d_buffers[n+1][d_index],
-                                      &in[0], nitems);
+                                      &in[1], nitems);
 
         uint64_t nr = nitems_read(idx);
         std::vector<gr::tag_t> tags;
         get_tags_in_range(tags, idx, nr, nr + nitems);
         for(size_t t = 0; t < tags.size(); t++) {
-          tags[t].offset = tags[t].offset - nr + (d_index-d_start);
+          tags[t].offset = tags[t].offset - nr + (d_index-d_start-1);
         }
         d_tags[idx].insert(d_tags[idx].end(), tags.begin(), tags.end());
         idx++;

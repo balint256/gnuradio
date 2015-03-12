@@ -19,23 +19,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import traceback
 import sys
+import os
 
 ## A list of functions that can receive a message.
 MESSENGERS_LIST = list()
 
+
 def register_messenger(messenger):
     """
     Append the given messenger to the list of messengers.
-    
+
     Args:
-        messenger: a method thats takes a string
+        messenger: a method that takes a string
     """
     MESSENGERS_LIST.append(messenger)
+
 
 def send(message):
     """
     Give the message to each of the messengers.
-    
+
     Args:
         message: a message string
     """
@@ -49,6 +52,7 @@ register_messenger(sys.stdout.write)
 ###########################################################################
 def send_init(platform):
     p = platform
+    get_paths = lambda x: (os.path.abspath(os.path.expanduser(x)), x)
     send('\n'.join([
         "<<< Welcome to %s %s >>>" % (p.get_name(), p.get_version()),
         "",
@@ -56,7 +60,7 @@ def send_init(platform):
         "Block paths:"
     ] + [
         "\t%s" % path + (" (%s)" % opath if opath != path else "")
-            for path, opath in p.get_block_paths().iteritems()
+            for path, opath in map(get_paths, p.get_block_paths())
     ]) + "\n")
 
 def send_page_switch(file_path):
@@ -100,8 +104,8 @@ def send_start_exec(file_path):
 def send_verbose_exec(verbose):
     send(verbose)
 
-def send_end_exec():
-    send('\n>>> Done\n')
+def send_end_exec(returncode=0):
+    send('\n>>> Done%s\n' % (" (return code %s)" % returncode if returncode else ""))
 
 ################# functions for saving flow graphs  ########################################
 def send_fail_save(file_path):

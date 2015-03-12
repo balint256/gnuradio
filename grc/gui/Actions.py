@@ -21,6 +21,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
+import Preferences
+
 NO_MODS_MASK = 0
 
 ########################################################################
@@ -33,10 +35,10 @@ def handle_key_press(event):
     """
     Call the action associated with the key press event.
     Both the key value and the mask must have a match.
-    
+
     Args:
         event: a gtk key press event
-    
+
     Returns:
         true if handled
     """
@@ -127,7 +129,7 @@ class ToggleAction(gtk.ToggleAction, _ActionBase):
     Pass additional arguments such as keypresses.
     """
 
-    def __init__(self, keypresses=(), name=None, label=None, tooltip=None, stock_id=None):
+    def __init__(self, keypresses=(), name=None, label=None, tooltip=None, stock_id=None, preference_name=None):
         """
         Create a new ToggleAction instance.
 
@@ -142,6 +144,15 @@ class ToggleAction(gtk.ToggleAction, _ActionBase):
         )
         #register this action
         _ActionBase.__init__(self, label, keypresses)
+        self.preference_name = preference_name
+
+    def load_from_preferences(self):
+        if self.preference_name is not None:
+            self.set_active(Preferences.bool_entry(self.preference_name))
+
+    def save_to_preferences(self):
+        if self.preference_name is not None:
+            Preferences.bool_entry(self.preference_name, self.get_active())
 
 ########################################################################
 # Actions
@@ -236,11 +247,21 @@ BLOCK_DISABLE = Action(
     stock_id=gtk.STOCK_DISCONNECT,
     keypresses=(gtk.keysyms.d, NO_MODS_MASK),
 )
+TOGGLE_SNAP_TO_GRID = ToggleAction(
+    label='_Snap to grid',
+    tooltip='Snap blocks to a grid for an easier connection alignment',
+    preference_name='snap_to_grid'
+)
 TOGGLE_HIDE_DISABLED_BLOCKS = ToggleAction(
-    label='Hide _disabled blocks',
+    label='Hide _Disabled Blocks',
     tooltip='Toggle visibility of disabled blocks and connections',
     stock_id=gtk.STOCK_MISSING_IMAGE,
     keypresses=(gtk.keysyms.d, gtk.gdk.CONTROL_MASK),
+)
+TOGGLE_AUTO_HIDE_PORT_LABELS = ToggleAction(
+    label='Auto-Hide _Port Labels',
+    tooltip='Automatically hide port labels',
+    preference_name='auto_hide_port_labels'
 )
 BLOCK_CREATE_HIER = Action(
     label='C_reate Hier',
@@ -275,11 +296,18 @@ TOGGLE_REPORTS_WINDOW = ToggleAction(
     label='Show _Reports',
     tooltip='Toggle visibility of the Report widget',
     keypresses=(gtk.keysyms.r, gtk.gdk.CONTROL_MASK),
+    preference_name='reports_window_visible'
 )
 TOGGLE_BLOCKS_WINDOW = ToggleAction(
     label='Show _Block Tree',
     tooltip='Toggle visibility of the block tree widget',
     keypresses=(gtk.keysyms.b, gtk.gdk.CONTROL_MASK),
+    preference_name='blocks_window_visible'
+)
+TOGGLE_SCROLL_LOCK = ToggleAction(
+    label='Reports Scroll _Lock',
+    tooltip='Toggle scroll lock for the report window',
+    preference_name='scroll_lock'
 )
 ABOUT_WINDOW_DISPLAY = Action(
     label='_About',
@@ -306,7 +334,7 @@ FLOW_GRAPH_GEN = Action(
 FLOW_GRAPH_EXEC = Action(
     label='_Execute',
     tooltip='Execute the flow graph',
-    stock_id=gtk.STOCK_EXECUTE,
+    stock_id=gtk.STOCK_MEDIA_PLAY,
     keypresses=(gtk.keysyms.F6, NO_MODS_MASK),
 )
 FLOW_GRAPH_KILL = Action(
@@ -316,7 +344,7 @@ FLOW_GRAPH_KILL = Action(
     keypresses=(gtk.keysyms.F7, NO_MODS_MASK),
 )
 FLOW_GRAPH_SCREEN_CAPTURE = Action(
-    label='S_creen Capture',
+    label='Sc_reen Capture',
     tooltip='Create a screen capture of the flow graph',
     stock_id=gtk.STOCK_PRINT,
     keypresses=(gtk.keysyms.Print, NO_MODS_MASK),
@@ -345,6 +373,16 @@ FIND_BLOCKS = Action(
     keypresses=(gtk.keysyms.f, gtk.gdk.CONTROL_MASK,
                 gtk.keysyms.slash, NO_MODS_MASK),
 )
+CLEAR_REPORTS = Action(
+    label='_Clear Reports',
+    tooltip='Clear Reports',
+    stock_id=gtk.STOCK_CLEAR,
+)
+SAVE_REPORTS = Action(
+    label='_Save Reports',
+    tooltip='Save Reports',
+    stock_id=gtk.STOCK_SAVE,
+)
 OPEN_HIER = Action(
     label='Open H_ier',
     tooltip='Open the source of the selected hierarchical block',
@@ -366,7 +404,7 @@ XML_PARSER_ERRORS_DISPLAY = Action(
     stock_id=gtk.STOCK_DIALOG_ERROR,
 )
 TOOLS_RUN_FDESIGN = Action(
-    label='Filter design tool',
+    label='Filter Design Tool',
     tooltip='Execute gr_filter_design',
     stock_id=gtk.STOCK_EXECUTE,
 )

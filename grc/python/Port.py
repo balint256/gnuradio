@@ -84,7 +84,7 @@ class Port(_Port, _GUIPort):
     def __init__(self, block, n, dir):
         """
         Make a new port from nested data.
-        
+
         Args:
             block: the parent element
             n: the nested odict
@@ -133,8 +133,8 @@ class Port(_Port, _GUIPort):
         """
         Handle the port cloning for virtual blocks.
         """
-        _Port.rewrite(self)
         if self.is_type_empty():
+            self._type_evaluated = None
             try: #clone type and vlen
                 source = self.resolve_empty_type()
                 self._type = str(source.get_type())
@@ -142,6 +142,7 @@ class Port(_Port, _GUIPort):
             except: #reset type and vlen
                 self._type = ''
                 self._vlen = ''
+        _Port.rewrite(self)
 
     def resolve_virtual_source(self):
         if self.get_parent().is_virtual_sink(): return _get_source_from_virtual_sink_port(self)
@@ -167,7 +168,7 @@ class Port(_Port, _GUIPort):
         """
         Get the vector length.
         If the evaluation of vlen cannot be cast to an integer, return 1.
-        
+
         Returns:
             the vector length or 1
         """
@@ -180,7 +181,7 @@ class Port(_Port, _GUIPort):
         Get the number of ports.
         If already blank, return a blank
         If the evaluation of nports cannot be cast to a positive integer, return 1.
-        
+
         Returns:
             the number of ports or 1
         """
@@ -198,7 +199,7 @@ class Port(_Port, _GUIPort):
         """
         Get the color that represents this port's type.
         Codes differ for ports where the vec length is 1 or greater than 1.
-        
+
         Returns:
             a hex color code.
         """

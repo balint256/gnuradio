@@ -42,14 +42,14 @@ namespace gr {
     {
 
     public:
-      
+
       // gr::blocks::@NAME@::sptr
       typedef boost::shared_ptr<@NAME@> sptr;
-      
+
       /*!
        * \brief Create an instance of @NAME@
        */
-      static sptr make();
+      static sptr make(size_t vlen=1);
     };
 
   } /* namespace blocks */

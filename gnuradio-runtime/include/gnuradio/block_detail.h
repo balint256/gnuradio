@@ -219,6 +219,7 @@ namespace gr {
     float pc_output_buffers_full_avg(size_t which);
     std::vector<float> pc_output_buffers_full_avg();
     float pc_work_time_avg();
+    float pc_throughput_avg();
 
     float pc_noutput_items_var();
     float pc_nproduced_var();
@@ -229,7 +230,7 @@ namespace gr {
     float pc_work_time_var();
 
     float pc_work_time_total();
- 
+
     tpb_detail d_tpb;	// used by thread-per-block scheduler
     int d_produce_or;
 
@@ -246,6 +247,9 @@ namespace gr {
     float d_ins_noutput_items;
     float d_avg_noutput_items;
     float d_var_noutput_items;
+    float d_total_noutput_items;
+    gr::high_res_timer_type d_pc_start_time;
+    gr::high_res_timer_type d_pc_last_work_time;
     float d_ins_nproduced;
     float d_avg_nproduced;
     float d_var_nproduced;
@@ -260,8 +264,9 @@ namespace gr {
     float d_avg_work_time;
     float d_var_work_time;
     float d_total_work_time;
+    float d_avg_throughput;
     float d_pc_counter;
-  
+
     block_detail(unsigned int ninputs, unsigned int noutputs);
 
     friend struct tpb_detail;

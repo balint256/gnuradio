@@ -332,6 +332,11 @@ self.\$(id).set_bandwidth(\$bw$(n), $n)
 	<check>\$num_mboards > 0</check>
 	<check>\$nchan >= \$num_mboards</check>
 	<check>(not \$stream_chans()) or (\$nchan == len(\$stream_chans))</check>
+	<sink>
+		<name>command</name>
+		<type>message</type>
+		<optional>1</optional>
+	</sink>
 #if $msg_ctl == 'sink'
 	<$msg_ctl>
 		<name>ctl</name>

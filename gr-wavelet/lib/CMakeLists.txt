@@ -1,4 +1,4 @@
-# Copyright 2012 Free Software Foundation, Inc.
+# Copyright 2012,2014 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -40,12 +40,10 @@ add_definitions(${GSL_DEFINITIONS})
 
 if(ENABLE_GR_CTRLPORT)
   ADD_DEFINITIONS(-DGR_CTRLPORT)
-  include_directories(${ICE_INCLUDE_DIR})
 endif(ENABLE_GR_CTRLPORT)
 
 include_directories(${LOG4CPP_INCLUDE_DIRS})
 link_directories(${LOG4CPP_LIBRARY_DIRS})
-
 
 ########################################################################
 # Setup library
@@ -83,7 +81,7 @@ add_library(gnuradio-wavelet SHARED ${gr_wavelet_sources})
 target_link_libraries(gnuradio-wavelet ${wavelet_libs})
 
 # we need -no-as-needed or else -lgslcblas gets stripped out on newer version of gcc
-if(CMAKE_COMPILER_IS_GNUCC AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(CMAKE_COMPILER_IS_GNUCC AND NOT APPLE)
     SET_TARGET_PROPERTIES(gnuradio-wavelet PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")
 endif()
 
@@ -91,3 +89,30 @@ GR_LIBRARY_FOO(gnuradio-wavelet RUNTIME_COMPONENT "wavelet_runtime" DEVEL_COMPON
 add_dependencies(gnuradio-wavelet
   wavelet_generated_includes wavelet_generated_swigs
   gnuradio-runtime)
+
+if(ENABLE_STATIC_LIBS)
+  if(ENABLE_GR_CTRLPORT)
+    # Remove GR_CTRLPORT set this target's definitions.
+    # Makes sure we don't try to use ControlPort stuff in source files
+    GET_DIRECTORY_PROPERTY(STATIC_DEFS COMPILE_DEFINITIONS)
+    list(REMOVE_ITEM STATIC_DEFS "GR_CTRLPORT")
+    SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS "${STATIC_DEFS}")
+
+    # readd it to the target since we removed it from the directory-wide list.
+    SET_PROPERTY(TARGET gnuradio-wavelet APPEND PROPERTY COMPILE_DEFINITIONS "GR_CTRLPORT")
+  endif(ENABLE_GR_CTRLPORT)
+
+  add_library(gnuradio-wavelet_static STATIC ${gr_wavelet_sources})
+
+  add_dependencies(gnuradio-wavelet_static wavelet_generated_includes
+    gnuradio-runtime_static)
+
+  if(NOT WIN32)
+    set_target_properties(gnuradio-wavelet_static
+      PROPERTIES OUTPUT_NAME gnuradio-wavelet)
+  endif(NOT WIN32)
+
+  install(TARGETS gnuradio-wavelet_static
+    ARCHIVE DESTINATION lib${LIB_SUFFIX} COMPONENT "wavelet_devel"   # .lib file
+    )
+endif(ENABLE_STATIC_LIBS)

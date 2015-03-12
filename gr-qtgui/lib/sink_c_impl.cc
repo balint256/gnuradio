@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2008-2012 Free Software Foundation, Inc.
+ * Copyright 2008-2012,2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -73,6 +73,13 @@ namespace gr {
       d_argv = new char;
       d_argv[0] = '\0';
 
+      // setup output message port to post frequency when display is
+      // double-clicked
+      message_port_register_out(pmt::mp("freq"));
+      message_port_register_in(pmt::mp("freq"));
+      set_msg_handler(pmt::mp("freq"),
+                      boost::bind(&sink_c_impl::handle_set_freq, this, _1));
+
       d_main_gui = NULL;
 
       // Perform fftshift operation;
@@ -123,8 +130,10 @@ namespace gr {
 	d_qApplication = qApp;
       }
       else {
+#if QT_VERSION >= 0x040500
         std::string style = prefs::singleton()->get_string("qtgui", "style", "raster");
         QApplication::setGraphicsSystem(QString(style.c_str()));
+#endif
 	d_qApplication = new QApplication(d_argc, &d_argv);
       }
 
@@ -218,6 +227,12 @@ namespace gr {
       d_main_gui->setFrequencyAxis(min, max);
     }
 
+    void
+    sink_c_impl::enable_rf_freq(bool en)
+    {
+      d_main_gui->enableRFFreq(en);
+    }
+
     /*
     void
     sink_c_impl::set_time_domain_axis(double min, double max)
@@ -250,7 +265,7 @@ namespace gr {
     sink_c_impl::fft(float *data_out, const gr_complex *data_in, int size)
     {
       if (d_window.size()) {
-	volk_32fc_32f_multiply_32fc_a(d_fft->get_inbuf(), data_in,
+	volk_32fc_32f_multiply_32fc(d_fft->get_inbuf(), data_in,
 				      &d_window.front(), size);
       }
       else {
@@ -258,8 +273,8 @@ namespace gr {
       }
 
       d_fft->execute ();     // compute the fft
-      volk_32fc_s32f_x2_power_spectral_density_32f_a(data_out, d_fft->get_outbuf(),
-						     size, 1.0, size);
+      volk_32fc_s32f_x2_power_spectral_density_32f(data_out, d_fft->get_outbuf(),
+                                                   size, 1.0, size);
 }
 
     void
@@ -312,6 +327,29 @@ namespace gr {
       }
     }
 
+    void
+    sink_c_impl::check_clicked()
+    {
+      if(d_main_gui->checkClicked()) {
+        double freq = d_main_gui->getClickedFreq();
+        message_port_pub(pmt::mp("freq"),
+                         pmt::cons(pmt::mp("freq"),
+                                   pmt::from_double(freq)));
+      }
+    }
+
+    void
+    sink_c_impl::handle_set_freq(pmt::pmt_t msg)
+    {
+      if(pmt::is_pair(msg)) {
+        pmt::pmt_t x = pmt::cdr(msg);
+        if(pmt::is_real(x)) {
+          d_center_freq = pmt::to_double(x);
+          set_frequency_range(d_center_freq, d_bandwidth);
+        }
+      }
+    }
+
     int
     sink_c_impl::general_work(int noutput_items,
 			      gr_vector_int &ninput_items,
@@ -324,6 +362,7 @@ namespace gr {
       // Update the FFT size from the application
       fftresize();
       windowreset();
+      check_clicked();
 
       for(int i=0; i < noutput_items; i+=d_fftsize) {
 	unsigned int datasize = noutput_items - i;

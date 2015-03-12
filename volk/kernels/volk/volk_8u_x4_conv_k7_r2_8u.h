@@ -1,3 +1,25 @@
+/* -*- c++ -*- */
+/*
+ * Copyright 2014 Free Software Foundation, Inc.
+ *
+ * This file is part of GNU Radio
+ *
+ * GNU Radio is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ *
+ * GNU Radio is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with GNU Radio; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
+ */
+
 #ifndef INCLUDED_volk_8u_x4_conv_k7_r2_8u_H
 #define INCLUDED_volk_8u_x4_conv_k7_r2_8u_H
 
@@ -8,7 +30,11 @@ typedef union {
   unsigned int w[64/*NUMSTATES*//32];
   unsigned short s[64/*NUMSTATES*//16];
   unsigned char c[64/*NUMSTATES*//8];
+#ifdef _MSC_VER
+} decision_t;
+#else
 } decision_t __attribute__ ((aligned (16)));
+#endif
 
 static inline void renormalize(unsigned char* X, unsigned char threshold){
   int NUMSTATES = 64;
@@ -36,7 +62,7 @@ static inline void BFLY(int i, int s, unsigned char * syms, unsigned char *Y, un
   int METRICSHIFT = 1;
   int PRECISIONSHIFT = 2;
 
-  
+
 
   metric =0;
   for(j=0;j<RATE;j++)
@@ -335,7 +361,7 @@ static inline void volk_8u_x4_conv_k7_r2_8u_spiral(unsigned char* Y, unsigned ch
     for(i=0;i<64/2;i++){
       BFLY(i, (((framebits+excess) >> 1) << 1) + j , syms, Y, X, (decision_t *)dec, Branchtab);
     }
-    
+
 
     renormalize(Y, 210);
 
@@ -344,7 +370,7 @@ static inline void volk_8u_x4_conv_k7_r2_8u_spiral(unsigned char* Y, unsigned ch
       printf("%d,", Y[ch]);
     }
     printf("\n");*/
-    
+
   }
   /*skip*/
   return;
@@ -368,16 +394,16 @@ static inline void volk_8u_x4_conv_k7_r2_8u_generic(unsigned char* Y, unsigned c
 
 
   int s,i;
-  
 
-  
+
+
   for (s=0;s<nbits;s++){
     void *tmp;
     for(i=0;i<NUMSTATES/2;i++){
       BFLY(i, s, syms, Y, X, (decision_t *)dec, Branchtab);
     }
 
-   
+
 
     renormalize(Y, RENORMALIZE_THRESHOLD);
 

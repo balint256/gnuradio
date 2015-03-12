@@ -29,8 +29,6 @@
 #include <gnuradio/block_detail.h>
 #include <gnuradio/buffer.h>
 #include <gnuradio/prefs.h>
-#include <gnuradio/config.h>
-#include <gnuradio/rpcregisterhelpers.h>
 #include <stdexcept>
 #include <iostream>
 
@@ -62,51 +60,7 @@ namespace gr {
     message_port_register_in(pmt::mp("system"));
     set_msg_handler(pmt::mp("system"), boost::bind(&block::system_handler, this, _1));
 
-#ifdef ENABLE_GR_LOG
-#ifdef HAVE_LOG4CPP
-    prefs *p = prefs::singleton();
-    std::string config_file = p->get_string("LOG", "log_config", "");
-    std::string log_level = p->get_string("LOG", "log_level", "off");
-    std::string log_file = p->get_string("LOG", "log_file", "");
-    std::string debug_level = p->get_string("LOG", "debug_level", "off");
-    std::string debug_file = p->get_string("LOG", "debug_file", "");
-
-    GR_CONFIG_LOGGER(config_file);
-
-    GR_LOG_GETLOGGER(LOG, "gr_log." + alias());
-    GR_LOG_SET_LEVEL(LOG, log_level);
-    if(log_file.size() > 0) {
-      if(log_file == "stdout") {
-        GR_LOG_ADD_CONSOLE_APPENDER(LOG, "cout","gr::log :%p: %c{1} - %m%n");
-      }
-      else if(log_file == "stderr") {
-        GR_LOG_ADD_CONSOLE_APPENDER(LOG, "cerr","gr::log :%p: %c{1} - %m%n");
-      }
-      else {
-        GR_LOG_ADD_FILE_APPENDER(LOG, log_file , true,"%r :%p: %c{1} - %m%n");
-      }
-    }
-    d_logger = LOG;
-
-    GR_LOG_GETLOGGER(DLOG, "gr_log_debug." + alias());
-    GR_LOG_SET_LEVEL(DLOG, debug_level);
-    if(debug_file.size() > 0) {
-      if(debug_file == "stdout") {
-        GR_LOG_ADD_CONSOLE_APPENDER(DLOG, "cout","gr::debug :%p: %c{1} - %m%n");
-      }
-      else if(debug_file == "stderr") {
-        GR_LOG_ADD_CONSOLE_APPENDER(DLOG, "cerr", "gr::debug :%p: %c{1} - %m%n");
-      }
-      else {
-        GR_LOG_ADD_FILE_APPENDER(DLOG, debug_file, true, "%r :%p: %c{1} - %m%n");
-      }
-    }
-    d_debug_logger = DLOG;
-#endif /* HAVE_LOG4CPP */
-#else /* ENABLE_GR_LOG */
-    d_logger = NULL;
-    d_debug_logger = NULL;
-#endif /* ENABLE_GR_LOG */
+    configure_default_loggers(d_logger, d_debug_logger, symbol_name());
   }
 
   block::~block()
@@ -728,6 +682,16 @@ namespace gr {
     }
   }
 
+  float
+  block::pc_throughput_avg() {
+    if(d_detail) {
+      return d_detail->pc_throughput_avg();
+    }
+    else {
+      return 0;
+    }
+  }
+
   void
   block::reset_perf_counters()
   {
@@ -796,6 +760,7 @@ namespace gr {
   {
     d_pc_rpc_set = true;
 #if defined(GR_CTRLPORT) && defined(GR_PERFORMANCE_COUNTERS)
+#include <gnuradio/rpcregisterhelpers.h>
     d_rpc_vars.push_back(
       rpcbasic_sptr(new rpcbasic_register_trigger<block>(
         alias(), "reset_perf_counters", &block::reset_perf_counters,

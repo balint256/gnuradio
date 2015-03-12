@@ -1,3 +1,25 @@
+/* -*- c++ -*- */
+/*
+ * Copyright 2014 Free Software Foundation, Inc.
+ *
+ * This file is part of GNU Radio
+ *
+ * GNU Radio is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ *
+ * GNU Radio is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with GNU Radio; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
+ */
+
 #ifndef INCLUDED_volk_16i_x4_quad_max_star_16i_a_H
 #define INCLUDED_volk_16i_x4_quad_max_star_16i_a_H
 
@@ -164,6 +186,66 @@ static inline  void volk_16i_x4_quad_max_star_16i_a_sse2(short* target, short* s
 }
 
 #endif /*LV_HAVE_SSE2*/
+
+#ifdef LV_HAVE_NEON
+#include <arm_neon.h>
+static inline void volk_16i_x4_quad_max_star_16i_neon(short* target, short* src0, short* src1, short* src2, short* src3, unsigned int num_points) {
+    const unsigned int eighth_points = num_points / 8;
+    unsigned i;
+
+    int16x8_t src0_vec, src1_vec, src2_vec, src3_vec;
+    int16x8_t diff12, diff34;
+    int16x8_t comp0, comp1, comp2, comp3;
+    int16x8_t result1_vec, result2_vec;
+    int16x8_t zeros;
+    zeros = veorq_s16(zeros, zeros);
+    for(i=0; i < eighth_points; ++i) {
+        src0_vec = vld1q_s16(src0);
+        src1_vec = vld1q_s16(src1);
+        src2_vec = vld1q_s16(src2);
+        src3_vec = vld1q_s16(src3);
+        diff12 = vsubq_s16(src0_vec, src1_vec);
+        diff34  = vsubq_s16(src2_vec, src3_vec);
+        comp0 = (int16x8_t)vcgeq_s16(diff12, zeros);
+        comp1 = (int16x8_t)vcltq_s16(diff12, zeros);
+        comp2 = (int16x8_t)vcgeq_s16(diff34, zeros);
+        comp3 = (int16x8_t)vcltq_s16(diff34, zeros);
+        comp0 = vandq_s16(src0_vec, comp0);
+        comp1 = vandq_s16(src1_vec, comp1);
+        comp2 = vandq_s16(src2_vec, comp2);
+        comp3 = vandq_s16(src3_vec, comp3);
+
+        result1_vec = vaddq_s16(comp0, comp1);
+        result2_vec = vaddq_s16(comp2, comp3);
+
+        diff12 = vsubq_s16(result1_vec, result2_vec);
+        comp0 = (int16x8_t)vcgeq_s16(diff12, zeros);
+        comp1 = (int16x8_t)vcltq_s16(diff12, zeros);
+        comp0 = vandq_s16(result1_vec, comp0);
+        comp1 = vandq_s16(result2_vec, comp1);
+        result1_vec = vaddq_s16(comp0, comp1);
+        vst1q_s16(target, result1_vec);
+    src0 += 8;
+    src1 += 8;
+    src2 += 8;
+    src3 += 8;
+    target += 8;
+    }
+
+
+    short temp0 = 0;
+    short temp1 = 0;
+    for(i=eighth_points*8; i < num_points; ++i) {
+      temp0 = ((short)(*src0 - *src1) > 0) ? *src0 : *src1;
+      temp1 = ((short)(*src2 - *src3) > 0) ? *src2 : *src3;
+      *target++ = ((short)(temp0 - temp1)>0) ? temp0 : temp1;
+    src0++;
+    src1++;
+    src2++;
+    src3++;
+    }
+}
+#endif /* LV_HAVE_NEON */
 
 
 #ifdef LV_HAVE_GENERIC

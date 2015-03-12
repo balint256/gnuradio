@@ -156,7 +156,7 @@ namespace gr {
   {
     if(HIER_BLOCK2_DETAIL_DEBUG)
       std::cout << "connecting message port..." << std::endl;
-    
+
     // register the subscription
     // this is done later...
     //  src->message_port_sub(srcport, pmt::cons(dst->alias_pmt(), dstport));
@@ -603,7 +603,7 @@ namespace gr {
       // propogate non hier connections through
       if(normal_connection){
         sfg->connect( q->src(), q->dst() );
-      } 
+      }
     }
 
     for(std::vector<std::pair<msg_endpoint, bool> >::iterator it = resolved_endpoints.begin();
@@ -626,7 +626,7 @@ namespace gr {
       }
     }
     */
-    
+
     // Construct unique list of blocks used either in edges, inputs,
     // outputs, or by themselves.  I still hate STL.
     basic_block_vector_t blocks; // unique list of used blocks

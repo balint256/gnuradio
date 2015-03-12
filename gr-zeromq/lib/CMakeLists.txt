@@ -31,7 +31,6 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 if(ENABLE_GR_CTRLPORT)
   ADD_DEFINITIONS(-DGR_CTRLPORT)
-  include_directories(${ICE_INCLUDE_DIR})
 endif(ENABLE_GR_CTRLPORT)
 
 ########################################################################
@@ -69,3 +68,27 @@ list(APPEND zeromq_libs
 add_library(gnuradio-zeromq SHARED ${zeromq_sources})
 target_link_libraries(gnuradio-zeromq ${zeromq_libs})
 GR_LIBRARY_FOO(gnuradio-zeromq RUNTIME_COMPONENT "zeromq_runtime" DEVEL_COMPONENT "zeromq_devel")
+
+if(ENABLE_STATIC_LIBS)
+  if(ENABLE_GR_CTRLPORT)
+    # Remove GR_CTRLPORT set this target's definitions.
+    # Makes sure we don't try to use ControlPort stuff in source files
+    GET_DIRECTORY_PROPERTY(STATIC_DEFS COMPILE_DEFINITIONS)
+    list(REMOVE_ITEM STATIC_DEFS "GR_CTRLPORT")
+    SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS "${STATIC_DEFS}")
+
+    # readd it to the target since we removed it from the directory-wide list.
+    SET_PROPERTY(TARGET gnuradio-zeromq APPEND PROPERTY COMPILE_DEFINITIONS "GR_CTRLPORT")
+  endif(ENABLE_GR_CTRLPORT)
+
+  add_library(gnuradio-zeromq_static STATIC ${zeromq_sources})
+
+  if(NOT WIN32)
+    set_target_properties(gnuradio-zeromq_static
+      PROPERTIES OUTPUT_NAME gnuradio-zeromq)
+  endif(NOT WIN32)
+
+  install(TARGETS gnuradio-zeromq_static
+    ARCHIVE DESTINATION lib${LIB_SUFFIX} COMPONENT "zeromq_devel"   # .lib file
+    )
+endif(ENABLE_STATIC_LIBS)

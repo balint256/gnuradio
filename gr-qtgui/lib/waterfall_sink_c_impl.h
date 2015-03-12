@@ -27,7 +27,6 @@
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/fft/fft.h>
 #include <gnuradio/high_res_timer.h>
-#include <gnuradio/thread/thread.h>
 #include <gnuradio/qtgui/waterfalldisplayform.h>
 
 namespace gr {
@@ -68,7 +67,12 @@ namespace gr {
       void windowreset();
       void buildwindow();
       void fftresize();
+      void check_clicked();
       void fft(float *data_out, const gr_complex *data_in, int size);
+
+      // Handles message input port for setting new center frequency.
+      // The message is a PMT pair (intern('freq'), double(frequency)).
+      void handle_set_freq(pmt::pmt_t msg);
 
     public:
       waterfall_sink_c_impl(int size, int wintype,

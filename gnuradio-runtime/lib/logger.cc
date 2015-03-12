@@ -31,6 +31,7 @@
 #endif
 
 #include <gnuradio/logger.h>
+#include <gnuradio/prefs.h>
 #include <stdexcept>
 #include <algorithm>
 
@@ -254,6 +255,13 @@ namespace gr {
   }
 
   void
+  logger_set_console_appender(logger_ptr logger, std::string target, std::string pattern)
+  {
+    logger->removeAllAppenders();
+    logger_add_console_appender(logger, target, pattern);
+  }
+
+  void
   logger_add_file_appender(logger_ptr logger, std::string filename,
                            bool append, std::string pattern)
   {
@@ -264,6 +272,14 @@ namespace gr {
     layout->setConversionPattern(pattern);
     app->setLayout(layout);
     logger->setAppender(app);
+  }
+
+  void
+  logger_set_file_appender(logger_ptr logger, std::string filename,
+                           bool append, std::string pattern)
+  {
+    logger->removeAllAppenders();
+    logger_add_file_appender(logger, filename, append, pattern);
   }
 
   void
@@ -342,3 +358,94 @@ gr_logger_reset_config(void)
 }
 
 #endif /* ENABLE_GR_LOGGER */
+
+
+namespace gr {
+
+  bool
+  configure_default_loggers(gr::logger_ptr &l, gr::logger_ptr &d,
+                            const std::string name)
+  {
+#ifdef ENABLE_GR_LOG
+#ifdef HAVE_LOG4CPP
+    prefs *p = prefs::singleton();
+    std::string config_file = p->get_string("LOG", "log_config", "");
+    std::string log_level = p->get_string("LOG", "log_level", "off");
+    std::string log_file = p->get_string("LOG", "log_file", "");
+    std::string debug_level = p->get_string("LOG", "debug_level", "off");
+    std::string debug_file = p->get_string("LOG", "debug_file", "");
+
+    GR_CONFIG_LOGGER(config_file);
+
+    GR_LOG_GETLOGGER(LOG, "gr_log." + name);
+    GR_LOG_SET_LEVEL(LOG, log_level);
+    if(log_file.size() > 0) {
+      if(log_file == "stdout") {
+        GR_LOG_SET_CONSOLE_APPENDER(LOG, "cout","gr::log :%p: %c{1} - %m%n");
+      }
+      else if(log_file == "stderr") {
+        GR_LOG_SET_CONSOLE_APPENDER(LOG, "cerr","gr::log :%p: %c{1} - %m%n");
+      }
+      else {
+        GR_LOG_SET_FILE_APPENDER(LOG, log_file , true,"%r :%p: %c{1} - %m%n");
+      }
+    }
+    l = LOG;
+
+    GR_LOG_GETLOGGER(DLOG, "gr_log_debug." + name);
+    GR_LOG_SET_LEVEL(DLOG, debug_level);
+    if(debug_file.size() > 0) {
+      if(debug_file == "stdout") {
+        GR_LOG_SET_CONSOLE_APPENDER(DLOG, "cout","gr::debug :%p: %c{1} - %m%n");
+      }
+      else if(debug_file == "stderr") {
+        GR_LOG_SET_CONSOLE_APPENDER(DLOG, "cerr", "gr::debug :%p: %c{1} - %m%n");
+      }
+      else {
+        GR_LOG_SET_FILE_APPENDER(DLOG, debug_file, true, "%r :%p: %c{1} - %m%n");
+      }
+    }
+    d = DLOG;
+    return true;
+#endif /* HAVE_LOG4CPP */
+
+#else /* ENABLE_GR_LOG */
+    l = NULL;
+    d = NULL;
+    return false;
+#endif /* ENABLE_GR_LOG */
+    return false;
+  }
+
+  bool
+  update_logger_alias(const std::string &name, const std::string &alias)
+  {
+#ifdef ENABLE_GR_LOG
+#ifdef HAVE_LOG4CPP
+    prefs *p = prefs::singleton();
+    std::string log_file = p->get_string("LOG", "log_file", "");
+    std::string debug_file = p->get_string("LOG", "debug_file", "");
+
+    GR_LOG_GETLOGGER(LOG, "gr_log." + name);
+    if(log_file.size() > 0) {
+      if(log_file == "stdout") {
+        boost::format str("gr::log :%%p: %1% - %%m%%n");
+        GR_LOG_SET_CONSOLE_APPENDER(LOG, "cout", boost::str(str % alias));
+      }
+      else if(log_file == "stderr") {
+        boost::format str("gr::log :%%p: %1% - %%m%%n");
+        GR_LOG_SET_CONSOLE_APPENDER(LOG, "cerr", boost::str(str % alias));
+      }
+      else {
+        boost::format str("%%r :%%p: %1% - %%m%%n");
+        GR_LOG_SET_FILE_APPENDER(LOG, log_file, true, boost::str(str % alias));
+      }
+    }
+    return true;
+#endif /* HAVE_LOG4CPP */
+#endif /* ENABLE_GR_LOG */
+
+    return false;
+  }
+
+} /* namespace gr */

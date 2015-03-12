@@ -1,4 +1,4 @@
-# Copyright 2012-2013 Free Software Foundation, Inc.
+# Copyright 2012-2014 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -23,102 +23,39 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/ConfigChecks.cmake)
 
 ########################################################################
-# generate helper scripts to expand templated files
-########################################################################
-include(GrPython)
-
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generate_helper.py "
-#!${PYTHON_EXECUTABLE}
-
-import sys, os, re
-sys.path.append('${GR_RUNTIME_PYTHONPATH}')
-os.environ['srcdir'] = '${CMAKE_CURRENT_SOURCE_DIR}'
-os.chdir('${CMAKE_CURRENT_BINARY_DIR}')
-
-if __name__ == '__main__':
-    import build_utils
-    root, inp = sys.argv[1:3]
-    for sig in sys.argv[3:]:
-        name = re.sub ('X+', sig, root)
-        d = build_utils.standard_dict(name, sig, 'blocks')
-        build_utils.expand_template(d, inp, '_impl')
-")
-
-macro(expand_cc_h_impl root)
-  #make a list of all the generated files
-  unset(expanded_files_cc_impl)
-  unset(expanded_files_h_impl)
-  foreach(sig ${ARGN})
-    string(REGEX REPLACE "X+" ${sig} name ${root})
-    list(APPEND expanded_files_cc_impl ${CMAKE_CURRENT_BINARY_DIR}/${name}_impl.cc)
-    list(APPEND expanded_files_h_impl ${CMAKE_CURRENT_BINARY_DIR}/${name}_impl.h)
-    list(APPEND expanded_files_h ${CMAKE_CURRENT_BINARY_DIR}/../include/${name}.h)
-  endforeach(sig)
-
-  #create a command to generate the _impl.cc files
-  add_custom_command(
-    OUTPUT ${expanded_files_cc_impl}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${root}_impl.cc.t
-    COMMAND ${PYTHON_EXECUTABLE} ${PYTHON_DASH_B}
-    ${CMAKE_CURRENT_BINARY_DIR}/generate_helper.py
-    ${root} ${root}_impl.cc.t ${ARGN}
-  )
-
-  #create a command to generate the _impl.h files
-  add_custom_command(
-    OUTPUT ${expanded_files_h_impl}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${root}_impl.h.t
-    COMMAND ${PYTHON_EXECUTABLE} ${PYTHON_DASH_B}
-    ${CMAKE_CURRENT_BINARY_DIR}/generate_helper.py
-    ${root} ${root}_impl.h.t ${ARGN}
-  )
-
-  #make _impl.cc source files depend on headers to force generation
-  set_source_files_properties(${expanded_files_cc_impl}
-    PROPERTIES OBJECT_DEPENDS "${expanded_files_h_impl}"
-  )
-
-  #make _impl.h source files depend on headers to force generation
-  set_source_files_properties(${expanded_files_h_impl}
-    PROPERTIES OBJECT_DEPENDS "${expanded_files_h}"
-  )
-
-  #install rules for the generated cc files
-  list(APPEND generated_sources ${expanded_files_cc_impl})
-endmacro(expand_cc_h_impl)
-
-########################################################################
 # Invoke macro to generate various sources
 ########################################################################
-expand_cc_h_impl(abs_XX             ss ii ff)
-expand_cc_h_impl(add_XX             ss ii cc)
-expand_cc_h_impl(add_const_XX       bb ss ii ff cc)
-expand_cc_h_impl(add_const_vXX      bb ss ii ff cc)
-expand_cc_h_impl(and_XX             bb ss ii)
-expand_cc_h_impl(and_const_XX       bb ss ii)
-expand_cc_h_impl(argmax_XX          fs is ss)
-expand_cc_h_impl(divide_XX          ss ii ff cc)
-expand_cc_h_impl(integrate_XX       ss ii ff cc)
-expand_cc_h_impl(max_XX             ff ii ss)
-expand_cc_h_impl(moving_average_XX  ss ii ff cc)
-expand_cc_h_impl(multiply_XX        ss ii)
-expand_cc_h_impl(multiply_const_XX  ss ii)
-expand_cc_h_impl(multiply_const_vXX ss ii ff cc)
-expand_cc_h_impl(mute_XX            ss ii ff cc)
-expand_cc_h_impl(not_XX             bb ss ii)
-expand_cc_h_impl(or_XX              bb ss ii)
-expand_cc_h_impl(peak_detector_XX   fb ib sb)
-expand_cc_h_impl(probe_signal_X     b s i f c)
-expand_cc_h_impl(probe_signal_vX    b s i f c)
-expand_cc_h_impl(sample_and_hold_XX bb ss ii ff)
-expand_cc_h_impl(tsb_vector_sink_X  b s i f c)
-expand_cc_h_impl(sub_XX             ss ii ff cc)
-expand_cc_h_impl(xor_XX             bb ss ii)
-expand_cc_h_impl(packed_to_unpacked_XX bb ss ii)
-expand_cc_h_impl(unpacked_to_packed_XX bb ss ii)
-expand_cc_h_impl(vector_insert_X    b s i f c)
-expand_cc_h_impl(vector_sink_X      b s i f c)
-expand_cc_h_impl(vector_source_X    b s i f c)
+include(GrMiscUtils)
+GR_EXPAND_X_CC_H_IMPL(blocks abs_XX             ss ii ff)
+GR_EXPAND_X_CC_H_IMPL(blocks add_XX             ss ii cc)
+GR_EXPAND_X_CC_H_IMPL(blocks add_const_XX       bb ss ii ff cc)
+GR_EXPAND_X_CC_H_IMPL(blocks add_const_vXX      bb ss ii ff cc)
+GR_EXPAND_X_CC_H_IMPL(blocks and_XX             bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks and_const_XX       bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks argmax_XX          fs is ss)
+GR_EXPAND_X_CC_H_IMPL(blocks divide_XX          ss ii ff cc)
+GR_EXPAND_X_CC_H_IMPL(blocks integrate_XX       ss ii ff cc)
+GR_EXPAND_X_CC_H_IMPL(blocks max_XX             ss ii ff)
+GR_EXPAND_X_CC_H_IMPL(blocks min_XX             ss ii ff)
+GR_EXPAND_X_CC_H_IMPL(blocks moving_average_XX  ss ii ff cc)
+GR_EXPAND_X_CC_H_IMPL(blocks multiply_XX        ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks multiply_const_XX  ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks multiply_const_vXX ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks mute_XX            ss ii ff cc)
+GR_EXPAND_X_CC_H_IMPL(blocks not_XX             bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks or_XX              bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks peak_detector_XX   fb ib sb)
+GR_EXPAND_X_CC_H_IMPL(blocks probe_signal_X     b s i f c)
+GR_EXPAND_X_CC_H_IMPL(blocks probe_signal_vX    b s i f c)
+GR_EXPAND_X_CC_H_IMPL(blocks sample_and_hold_XX bb ss ii ff)
+GR_EXPAND_X_CC_H_IMPL(blocks sub_XX             ss ii cc)
+GR_EXPAND_X_CC_H_IMPL(blocks tsb_vector_sink_X  b s i f c)
+GR_EXPAND_X_CC_H_IMPL(blocks xor_XX             bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks packed_to_unpacked_XX bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks unpacked_to_packed_XX bb ss ii)
+GR_EXPAND_X_CC_H_IMPL(blocks vector_insert_X    b s i f c)
+GR_EXPAND_X_CC_H_IMPL(blocks vector_sink_X      b s i f c)
+GR_EXPAND_X_CC_H_IMPL(blocks vector_source_X    b s i f c)
 
 ########################################################################
 # Setup the include and linker paths
@@ -137,7 +74,6 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 if(ENABLE_GR_CTRLPORT)
   ADD_DEFINITIONS(-DGR_CTRLPORT)
-  include_directories(${ICE_INCLUDE_DIR})
 endif(ENABLE_GR_CTRLPORT)
 
 ########################################################################
@@ -204,7 +140,9 @@ list(APPEND gr_blocks_sources
     multiply_ff_impl.cc
     multiply_conjugate_cc_impl.cc
     multiply_const_cc_impl.cc
+    multiply_const_vcc_impl.cc
     multiply_const_ff_impl.cc
+    multiply_const_vff_impl.cc
     nlog10_ff_impl.cc
     nop_impl.cc
     null_sink_impl.cc
@@ -239,6 +177,7 @@ list(APPEND gr_blocks_sources
     streams_to_stream_impl.cc
     streams_to_vector_impl.cc
     stretch_ff_impl.cc
+    sub_ff_impl.cc
     tagged_file_sink_impl.cc
     tagged_stream_to_pdu_impl.cc
     tagged_stream_multiply_length_impl.cc
@@ -262,16 +201,21 @@ list(APPEND gr_blocks_sources
     vector_to_streams_impl.cc
     wavfile_sink_impl.cc
     wavfile_source_impl.cc
+    multiply_matrix_ff_impl.cc
 )
 
 if(ENABLE_GR_CTRLPORT)
-list(APPEND gr_blocks_sources
+list(APPEND blocks_ctrlport_sources
   ctrlport_probe_c_impl.cc
   ctrlport_probe2_c_impl.cc
   ctrlport_probe2_f_impl.cc
   ctrlport_probe2_s_impl.cc
   ctrlport_probe2_i_impl.cc
   ctrlport_probe2_b_impl.cc
+)
+
+list(APPEND gr_blocks_sources
+  ${blocks_ctrlport_sources}
 )
 endif(ENABLE_GR_CTRLPORT)
 
@@ -302,6 +246,37 @@ add_dependencies(gnuradio-blocks blocks_generated_includes)
 
 target_link_libraries(gnuradio-blocks ${blocks_libs})
 GR_LIBRARY_FOO(gnuradio-blocks RUNTIME_COMPONENT "blocks_runtime" DEVEL_COMPONENT "blocks_devel")
+
+if(ENABLE_STATIC_LIBS)
+  # Remove controlport-specific source files from staticlibs build
+  if(ENABLE_GR_CTRLPORT)
+    list(REMOVE_ITEM gr_blocks_sources
+      ${blocks_ctrlport_sources}
+      )
+
+    # Remove GR_CTRLPORT set this target's definitions.
+    # Makes sure we don't try to use ControlPort stuff in source files
+    GET_DIRECTORY_PROPERTY(STATIC_DEFS COMPILE_DEFINITIONS)
+    list(REMOVE_ITEM STATIC_DEFS "GR_CTRLPORT")
+    SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS "${STATIC_DEFS}")
+
+    # readd it to the target since we removed it from the directory-wide list.
+    SET_PROPERTY(TARGET gnuradio-blocks APPEND PROPERTY COMPILE_DEFINITIONS "GR_CTRLPORT")
+  endif(ENABLE_GR_CTRLPORT)
+
+  add_library(gnuradio-blocks_static STATIC ${gr_blocks_sources})
+
+  add_dependencies(gnuradio-blocks_static blocks_generated_includes)
+
+  if(NOT WIN32)
+    set_target_properties(gnuradio-blocks_static
+      PROPERTIES OUTPUT_NAME gnuradio-blocks)
+  endif(NOT WIN32)
+
+  install(TARGETS gnuradio-blocks_static
+    ARCHIVE DESTINATION lib${LIB_SUFFIX} COMPONENT "blocks_devel"   # .lib file
+    )
+endif(ENABLE_STATIC_LIBS)
 
 ########################################################################
 # QA C++ Code for gr-blocks

@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2012 Free Software Foundation, Inc.
+ * Copyright 2012,2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -28,6 +28,7 @@
 #endif
 
 #include <gnuradio/qtgui/api.h>
+#include <gnuradio/qtgui/trigger_mode.h>
 #include <gnuradio/sync_block.h>
 #include <qapplication.h>
 #include <gnuradio/filter/firdes.h>
@@ -46,6 +47,25 @@ namespace gr {
      * different color, and the \a set_title and \a set_color
      * functions can be used to change the lable and color for a given
      * input number.
+     *
+     * Message Ports:
+     *
+     * - freq (input):
+     *        Receives a PMT pair: (intern("freq"), double(frequency).
+     *        This is used to retune the center frequency of the
+     *        display's x-axis.
+     *
+     * - freq (output):
+     *        Produces a PMT pair with (intern("freq"), double(frequency).
+     *        When a user double-clicks on the display, the block
+     *        produces and emits a message containing the frequency of
+     *        where on the x-axis the user clicked. This value can be
+     *        used by other blocks to update their frequency setting.
+     *
+     *        To perform click-to-tune behavior, this output 'freq'
+     *        port can be redirected to this block's input 'freq' port
+     *        to catch the message and update the center frequency of
+     *        the display.
      */
     class QTGUI_API freq_sink_c : virtual public sync_block
     {
@@ -99,6 +119,33 @@ namespace gr {
       virtual void set_line_marker(int which, int marker) = 0;
       virtual void set_line_alpha(int which, double alpha) = 0;
 
+      /*!
+       * Set up a trigger for the sink to know when to start
+       * plotting. Useful to isolate events and avoid noise.
+       *
+       * The trigger modes are Free, Auto, Normal, and Tag (see
+       * gr::qtgui::trigger_mode). The first three are like a normal
+       * trigger function. Free means free running with no trigger,
+       * auto will trigger if the trigger event is seen, but will
+       * still plot otherwise, and normal will hold until the trigger
+       * event is observed. The Tag trigger mode allows us to trigger
+       * off a specific stream tag. The tag trigger is based only on
+       * the name of the tag, so when a tag of the given name is seen,
+       * the trigger is activated.
+       *
+       * In auto and normal mode, we look to see if the magnitude of
+       * the any FFT point is over the set level.
+       *
+       * \param mode The trigger_mode: free, auto, normal, or tag.
+       * \param level The magnitude of the trigger even for auto or normal modes.
+       * \param channel Which input channel to use for the trigger events.
+       * \param tag_key The name (as a string) of the tag to trigger off
+       *                of if using the tag mode.
+       */
+      virtual void set_trigger_mode(trigger_mode mode,
+                                    float level, int channel,
+                                    const std::string &tag_key="") = 0;
+
       virtual std::string title() = 0;
       virtual std::string line_label(int which) = 0;
       virtual std::string line_color(int which) = 0;
@@ -112,6 +159,8 @@ namespace gr {
       virtual void enable_menu(bool en=true) = 0;
       virtual void enable_grid(bool en=true) = 0;
       virtual void enable_autoscale(bool en=true) = 0;
+      virtual void clear_max_hold() = 0;
+      virtual void clear_min_hold() = 0;
       virtual void reset() = 0;
 
       QApplication *d_qApplication;

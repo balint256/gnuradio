@@ -27,6 +27,7 @@ DEFAULT_FILE_PATH = os.getcwd()
 
 ##file extensions
 IMAGE_FILE_EXTENSION = '.png'
+TEXT_FILE_EXTENSION = '.txt'
 
 ##name for new/unsaved flow graphs
 NEW_FLOGRAPH_TITLE = 'untitled'
@@ -40,6 +41,13 @@ MIN_DIALOG_HEIGHT = 500
 ##default sizes
 DEFAULT_BLOCKS_WINDOW_WIDTH = 100
 DEFAULT_REPORTS_WINDOW_WIDTH = 100
+## flow-graph canvas fonts
+FONT_FAMILY = "Sans"
+FONT_SIZE = 8
+BLOCK_FONT = "%s %f" % (FONT_FAMILY, FONT_SIZE)
+PORT_FONT = BLOCK_FONT
+PARAM_FONT = "%s %f" % (FONT_FAMILY, FONT_SIZE - 0.5)
+
 
 ##The size of the state saving cache in the flow graph (for undo/redo functionality)
 STATE_CACHE_SIZE = 42
@@ -53,9 +61,10 @@ BLOCK_LABEL_PADDING = 7
 PORT_LABEL_PADDING = 2
 
 #port constraint dimensions
-PORT_SEPARATION = 17
+PORT_SEPARATION = 32
 PORT_BORDER_SEPARATION = 9
 PORT_MIN_WIDTH = 20
+PORT_LABEL_HIDDEN_WIDTH = 10
 
 #minimal length of connector
 CONNECTOR_EXTENSION_MINIMAL = 11
@@ -81,3 +90,6 @@ SCROLL_DISTANCE = 15
 
 #How close the mouse click can be to a line and register a connection select.
 LINE_SELECT_SENSITIVITY = 5
+
+# canvas grid size
+CANVAS_GRID_SIZE = 8

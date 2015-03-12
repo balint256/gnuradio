@@ -54,7 +54,6 @@ TOOLBAR_LIST = (
     Actions.FIND_BLOCKS,
     Actions.RELOAD_BLOCKS,
     Actions.OPEN_HIER,
-    Actions.BUSSIFY_SOURCES,
 )
 
 ##The list of actions and categories for the menu bar.
@@ -91,12 +90,20 @@ MENU_BAR_LIST = (
     ]),
     (gtk.Action('View', '_View', None, None), [
         Actions.TOGGLE_BLOCKS_WINDOW,
+        None,
         Actions.TOGGLE_REPORTS_WINDOW,
+        Actions.TOGGLE_SCROLL_LOCK,
+        Actions.SAVE_REPORTS,
+        Actions.CLEAR_REPORTS,
+        None,
+        Actions.TOGGLE_HIDE_DISABLED_BLOCKS,
+        Actions.TOGGLE_AUTO_HIDE_PORT_LABELS,
+        Actions.TOGGLE_SNAP_TO_GRID,
         None,
         Actions.ERRORS_WINDOW_DISPLAY,
         Actions.FIND_BLOCKS,
     ]),
-    (gtk.Action('Build', '_Build', None, None), [
+    (gtk.Action('Run', '_Run', None, None), [
         Actions.FLOW_GRAPH_GEN,
         Actions.FLOW_GRAPH_EXEC,
         Actions.FLOW_GRAPH_KILL,

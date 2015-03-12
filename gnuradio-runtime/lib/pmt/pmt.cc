@@ -160,8 +160,13 @@ _any(pmt_t x)
 
 const pmt_t PMT_T = pmt_t(new pmt_bool());	// singleton
 const pmt_t PMT_F = pmt_t(new pmt_bool());	// singleton
-const pmt_t PMT_NIL = pmt_t(new pmt_null());	// singleton
 const pmt_t PMT_EOF = cons(PMT_NIL, PMT_NIL);           // singleton
+
+pmt_t get_PMT_NIL()
+{
+  static pmt_t NIL = pmt_t(new pmt_null());
+  return NIL;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 //                           Booleans
@@ -363,6 +368,12 @@ from_double(double x)
   return pmt_t(new pmt_real(x));
 }
 
+pmt_t
+from_float(float x)
+{
+  return pmt_t(new pmt_real(x));
+}
+
 double
 to_double(pmt_t x)
 {
@@ -372,6 +383,12 @@ to_double(pmt_t x)
     return _integer(x)->value();
 
   throw wrong_type("pmt_to_double", x);
+}
+
+float
+to_float(pmt_t x)
+{
+  return float(to_double(x));
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1388,7 +1405,7 @@ list_has(pmt_t list, const pmt_t& item)
     pmt_t right = cdr(list);
     if(equal(left,item))
         return true;
-    return list_has(right, item);   
+    return list_has(right, item);
   } else {
     if(is_null(list))
         return false;

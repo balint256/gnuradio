@@ -285,6 +285,10 @@ namespace gr {
       return d_message_subscribers;
     }
 
+    const msg_queue_map_t& get_msg_map(void) const {
+      return msg_queue;
+    }
+
 #ifdef GR_CTRLPORT
     /*!
      * \brief Add an RPC variable (get or set).

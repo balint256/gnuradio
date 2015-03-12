@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2005,2006,2010,2013 Free Software Foundation, Inc.
+ * Copyright 2005,2006,2010,2013-2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -40,9 +40,10 @@
 namespace gr {
   namespace audio {
 
-    AUDIO_REGISTER_SOURCE(REG_PRIO_MED, jack)(int sampling_rate,
-                                              const std::string &device_name,
-                                              bool ok_to_block)
+    source::sptr
+    jack_source_fcn(int sampling_rate,
+                    const std::string &device_name,
+                    bool ok_to_block)
     {
       return source::sptr
         (new jack_source(sampling_rate, device_name, ok_to_block));
@@ -66,7 +67,7 @@ namespace gr {
     {
       jack_source *self = (jack_source *)arg;
       unsigned int write_size = nframes*sizeof(sample_t);
-      
+
       for(int i = 0; i < self->d_portcount; i++) {
         if(jack_ringbuffer_write_space (self->d_ringbuffer[i]) < write_size) {
           self->d_noverruns++;
@@ -74,7 +75,7 @@ namespace gr {
           fputs ("jO", stderr);
           return 0;
         }
-        
+
         char *buffer = (char *)jack_port_get_buffer(self->d_jack_input_port[i], nframes);
 
         jack_ringbuffer_write (self->d_ringbuffer[i], buffer, write_size);
@@ -109,7 +110,7 @@ namespace gr {
         d_ok_to_block(ok_to_block),
         d_jack_client(0),
         d_portcount(0),
-        d_jack_input_port(),        
+        d_jack_input_port(),
         d_ringbuffer(),
         d_noverruns(0)
     {
@@ -125,8 +126,8 @@ namespace gr {
       if((d_jack_client = jack_client_open(d_device_name.c_str(),
                                            options, &status,
                                            server_name)) == NULL) {
-        fprintf(stderr, "audio_jack_source[%s]: jack server not running?\n",
-                d_device_name.c_str());
+        GR_LOG_ERROR(d_logger, boost::format("[%1%]: jack server not running?") \
+                     % d_device_name);
         throw std::runtime_error("audio_jack_source");
       }
 
@@ -150,9 +151,8 @@ namespace gr {
       jack_nframes_t sample_rate = jack_get_sample_rate(d_jack_client);
 
       if((jack_nframes_t)sampling_rate != sample_rate) {
-        fprintf(stderr, "audio_jack_source[%s]: unable to support sampling rate %d\n",
-                d_device_name.c_str(), sampling_rate);
-        fprintf(stderr, "  card requested %d instead.\n", sample_rate);
+        GR_LOG_INFO(d_logger, boost::format("[%1%]: unable to support sampling rate %2%\n\tCard requested %3% instead.") \
+                     % d_device_name % sampling_rate % d_sampling_rate);
       }
     }
 
@@ -251,8 +251,8 @@ namespace gr {
     void
     jack_source::output_error_msg(const char *msg, int err)
     {
-      fprintf(stderr, "audio_jack_source[%s]: %s: %d\n",
-              d_device_name.c_str(), msg,  err);
+      GR_LOG_ERROR(d_logger, boost::format("[%1%]: %2%: %3%") \
+                   % d_device_name % msg % err);
     }
 
     void

@@ -76,6 +76,8 @@ public:
   void replot();
 
   void setYaxis(double min, double max);
+  double getYMin() const;
+  double getYMax() const;
 
   void setTraceColour (QColor);
   void setBGColour (QColor c);
@@ -116,6 +118,8 @@ public slots:
 
   void setAutoScale(bool state);
 
+  void setPlotPosHalf(bool half);
+
 private:
   void _resetXAxisPoints();
   void _autoScale(double bottom, double top);
@@ -141,6 +145,7 @@ private:
   double d_stop_frequency;
   double d_ymax;
   double d_ymin;
+  bool   d_half_freq;
 
   QwtPlotMarker* d_lower_intensity_marker;
   QwtPlotMarker* d_upper_intensity_marker;

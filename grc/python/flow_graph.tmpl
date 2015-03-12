@@ -58,6 +58,7 @@ class $(class_name)(grc_wxgui.top_block_gui):
         self.SetIcon(wx.Icon(_icon_path, wx.BITMAP_TYPE_ANY))
     #end if
 #elif $generate_options == 'qt_gui'
+from distutils.version import StrictVersion
 class $(class_name)(gr.top_block, Qt.QWidget):
 
     def __init__($param_str):
@@ -181,10 +182,8 @@ gr.io_signaturev($(len($io_sigs)), $(len($io_sigs)), [$(', '.join($size_strs))])
 ##  However, port names for IO pads should be self.
 ########################################################
 #def make_port_sig($port)
-    #if $port.get_parent().get_key() == 'pad_source'
-(self, $flow_graph.get_pad_sources().index($port.get_parent()))#slurp
-    #elif $port.get_parent().get_key() == 'pad_sink'
-(self, $flow_graph.get_pad_sinks().index($port.get_parent()))#slurp
+    #if $port.get_parent().get_key() in ('pad_source', 'pad_sink')
+(self, $flow_graph.get_pad_port_global_key($port))#slurp
     #else
 (self.$port.get_parent().get_id(), $port.get_key())#slurp
     #end if
@@ -235,7 +234,7 @@ gr.io_signaturev($(len($io_sigs)), $(len($io_sigs)), [$(', '.join($size_strs))])
 #end for
 
 ########################################################
-# QT sink close method reimplementation
+## QT sink close method reimplementation
 ########################################################
 #if $generate_options == 'qt_gui'
     def closeEvent(self, event):
@@ -318,7 +317,8 @@ if __name__ == '__main__':
     tb.Wait()
         #end if
     #elif $generate_options == 'qt_gui'
-    Qt.QApplication.setGraphicsSystem(gr.prefs().get_string('qtgui','style','raster'))
+    if(StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0")):
+        Qt.QApplication.setGraphicsSystem(gr.prefs().get_string('qtgui','style','raster'))
     qapp = Qt.QApplication(sys.argv)
     tb = $(class_name)($(', '.join($params_eq_list)))
     #if $flow_graph.get_option('run')
@@ -354,7 +354,10 @@ if __name__ == '__main__':
         #for $m in $monitors
     (tb.$m.get_id()).start()
         #end for
-    raw_input('Press Enter to quit: ')
+    try:
+        raw_input('Press Enter to quit: ')
+    except EOFError:
+        pass
     tb.stop()
         #elif $run_options == 'run'
             #if $flow_graph.get_option('max_nouts')

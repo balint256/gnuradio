@@ -1,17 +1,17 @@
 # Copyright 2013 Free Software Foundation, Inc.
-# 
+#
 # This file is part of GNU Radio
-# 
+#
 # GNU Radio is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3, or (at your option)
 # any later version.
-# 
+#
 # GNU Radio is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with GNU Radio; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
@@ -60,29 +60,23 @@ GR_SET_GLOBAL(GNURADIO_RUNTIME_PYTHONPATH ${GNURADIO_RUNTIME_PYTHONPATH})
 # Register controlport component
 ########################################################################
 
-FIND_PACKAGE(ICE-3.5)  # check for ICE 3.5
-if(NOT ICE_FOUND)
-  message(STATUS "ICE 3.5 not found. Looking for 3.4")
-  FIND_PACKAGE(ICE) # checks for version 3.4
-endif(NOT ICE_FOUND)
 FIND_PACKAGE(SWIG)
 
 if(SWIG_FOUND)
-    set(SWIG_VERSION_CHECK FALSE)
-    if("${SWIG_VERSION}" VERSION_GREATER "2.0.0")
-        set(SWIG_VERSION_CHECK TRUE)
-    else("${SWIG_VERSION}" VERSION_GREATER "2.0.0")
-      message(STATUS "")
-      message(STATUS "Ctrlport requires SWIG version >= 2.0")
-    endif()
+  set(SWIG_VERSION_CHECK FALSE)
+  if("${SWIG_VERSION}" VERSION_GREATER "2.0.0")
+    set(SWIG_VERSION_CHECK TRUE)
+  else("${SWIG_VERSION}" VERSION_GREATER "2.0.0")
+    message(STATUS "")
+    message(STATUS "Ctrlport requires SWIG version >= 2.0")
+  endif()
 endif(SWIG_FOUND)
 
 GR_REGISTER_COMPONENT("gr-ctrlport" ENABLE_GR_CTRLPORT
-    Boost_FOUND
-    SWIG_FOUND
-    SWIG_VERSION_CHECK
-    ICE_FOUND
-    ENABLE_GNURADIO_RUNTIME
+  Boost_FOUND
+  SWIG_FOUND
+  SWIG_VERSION_CHECK
+  ENABLE_GNURADIO_RUNTIME
 )
 
 ########################################################################
@@ -142,7 +136,7 @@ install(
 if(ENABLE_GR_LOG AND HAVE_LOG4CPP)
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/gr_log_default.conf
-    DESTINATION ${GR_CONF_DIR}/gnuradio
+    DESTINATION ${GR_PREFSDIR}
     COMPONENT "runtime_runtime"
 )
 endif(ENABLE_GR_LOG AND HAVE_LOG4CPP)
@@ -174,23 +168,5 @@ install(
     DESTINATION ${GR_LIBRARY_DIR}/pkgconfig
     COMPONENT "runtime_devel"
 )
-
-########################################################################
-# Setup ControlPort preferences file and installation information
-########################################################################
-if(ENABLE_GR_CTRLPORT)
-
-SET(GR_PKG_CTRL_EXAMPLES_DIR ${GR_PKG_DATA_DIR}/examples/ctrlport)
-
-SET(GR_PKG_CTRL_SLICE_DIR ${GR_PKG_DATA_DIR}/ctrlport)
-file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${GR_PKG_CTRL_SLICE_DIR} slicedir)
-
-install(
-    FILES ctrlport.conf.example
-    DESTINATION ${SYSCONFDIR}/${CMAKE_PROJECT_NAME}
-    COMPONENT "gnuradio_runtime"
-)
-
-endif(ENABLE_GR_CTRLPORT)
 
 endif(ENABLE_GNURADIO_RUNTIME)

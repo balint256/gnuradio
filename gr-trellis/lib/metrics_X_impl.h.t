@@ -42,11 +42,15 @@ namespace gr {
       @IMPL_NAME@(int O, int D,  const std::vector<@I_TYPE@> &TABLE,
 		  digital::trellis_metric_type_t TYPE);
       ~@IMPL_NAME@();
-      
+
       int O() const { return d_O; }
       int D() const { return d_D; }
       digital::trellis_metric_type_t TYPE() const { return d_TYPE; }
       std::vector<@I_TYPE@> TABLE() const { return d_TABLE; }
+
+      void set_O(int O);
+      void set_D(int D);
+      void set_TYPE(digital::trellis_metric_type_t type);
       void set_TABLE(const std::vector<@I_TYPE@> &table);
 
       void forecast(int noutput_items,

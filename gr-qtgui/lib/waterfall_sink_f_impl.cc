@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2012 Free Software Foundation, Inc.
+ * Copyright 2012,2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -53,8 +53,8 @@ namespace gr {
 						 int nconnections,
 						 QWidget *parent)
       : sync_block("waterfall_sink_f",
-		      io_signature::make(1, -1, sizeof(float)),
-		      io_signature::make(0, 0, 0)),
+                   io_signature::make(1, -1, sizeof(float)),
+                   io_signature::make(0, 0, 0)),
 	d_fftsize(fftsize), d_fftavg(1.0),
 	d_wintype((filter::firdes::win_type)(wintype)),
 	d_center_freq(fc), d_bandwidth(bw), d_name(name),
@@ -67,6 +67,13 @@ namespace gr {
       d_argc = 1;
       d_argv = new char;
       d_argv[0] = '\0';
+
+      // setup output message port to post frequency when display is
+      // double-clicked
+      message_port_register_out(pmt::mp("freq"));
+      message_port_register_in(pmt::mp("freq"));
+      set_msg_handler(pmt::mp("freq"),
+                      boost::bind(&waterfall_sink_f_impl::handle_set_freq, this, _1));
 
       d_main_gui = NULL;
 
@@ -100,8 +107,8 @@ namespace gr {
         d_main_gui->close();
 
       for(int i = 0; i < d_nconnections; i++) {
-	volk_free(d_residbufs[i]);
-	volk_free(d_magbufs[i]);
+ 	volk_free(d_residbufs[i]);
+ 	volk_free(d_magbufs[i]);
       }
       delete d_fft;
       volk_free(d_fbuf);
@@ -120,7 +127,7 @@ namespace gr {
     {
       unsigned int ninputs = ninput_items_required.size();
       for (unsigned int i = 0; i < ninputs; i++) {
-	ninput_items_required[i] = std::min(d_fftsize, 8191);
+ 	ninput_items_required[i] = std::min(d_fftsize, 8191);
       }
     }
 
@@ -128,12 +135,14 @@ namespace gr {
     waterfall_sink_f_impl::initialize()
     {
       if(qApp != NULL) {
-	d_qApplication = qApp;
+ 	d_qApplication = qApp;
       }
       else {
+#if QT_VERSION >= 0x040500
         std::string style = prefs::singleton()->get_string("qtgui", "style", "raster");
         QApplication::setGraphicsSystem(QString(style.c_str()));
-	d_qApplication = new QApplication(d_argc, &d_argv);
+#endif
+ 	d_qApplication = new QApplication(d_argc, &d_argv);
       }
 
       // If a style sheet is set in the prefs file, enable it here.
@@ -147,6 +156,9 @@ namespace gr {
       set_fft_window(d_wintype);
       set_fft_size(d_fftsize);
       set_frequency_range(d_center_freq, d_bandwidth);
+
+      if(d_name.size() > 0)
+        set_title(d_name);
 
       // initialize update time to 10 times a second
       set_update_time(0.1);
@@ -278,6 +290,12 @@ namespace gr {
       d_main_gui->resize(QSize(width, height));
     }
 
+    void
+    waterfall_sink_f_impl::set_plot_pos_half(bool half)
+    {
+      d_main_gui->setPlotPosHalf(half);
+    }
+
     std::string
     waterfall_sink_f_impl::title()
     {
@@ -362,6 +380,8 @@ namespace gr {
     void
     waterfall_sink_f_impl::windowreset()
     {
+      gr::thread::scoped_lock lock(d_setlock);
+
       filter::firdes::win_type newwintype;
       newwintype = d_main_gui->getFFTWindowType();
       if(d_wintype != newwintype) {
@@ -382,7 +402,10 @@ namespace gr {
     void
     waterfall_sink_f_impl::fftresize()
     {
-      int newfftsize = d_fftsize;
+      gr::thread::scoped_lock lock(d_setlock);
+
+      int newfftsize = d_main_gui->getFFTSize();
+      d_fftavg = d_main_gui->getFFTAverage();
 
       if(newfftsize != d_fftsize) {
 
@@ -419,6 +442,30 @@ namespace gr {
       }
     }
 
+    void
+    waterfall_sink_f_impl::check_clicked()
+    {
+      if(d_main_gui->checkClicked()) {
+        double freq = d_main_gui->getClickedFreq();
+        message_port_pub(pmt::mp("freq"),
+                         pmt::cons(pmt::mp("freq"),
+                                   pmt::from_double(freq)));
+      }
+    }
+
+    void
+    waterfall_sink_f_impl::handle_set_freq(pmt::pmt_t msg)
+    {
+      if(pmt::is_pair(msg)) {
+        pmt::pmt_t x = pmt::cdr(msg);
+        if(pmt::is_real(x)) {
+          d_center_freq = pmt::to_double(x);
+          d_qApplication->postEvent(d_main_gui,
+                                    new SetFreqEvent(d_center_freq, d_bandwidth));
+        }
+      }
+    }
+
     int
     waterfall_sink_f_impl::work(int noutput_items,
 				gr_vector_const_void_star &input_items,
@@ -430,6 +477,7 @@ namespace gr {
       // Update the FFT size from the application
       fftresize();
       windowreset();
+      check_clicked();
 
       for(int i=0; i < noutput_items; i+=d_fftsize) {
 	unsigned int datasize = noutput_items - i;

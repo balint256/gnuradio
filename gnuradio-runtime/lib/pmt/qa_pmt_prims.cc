@@ -125,6 +125,15 @@ qa_pmt_prims::test_reals()
   CPPUNIT_ASSERT_EQUAL(-1.0, pmt::to_double(m1));
   CPPUNIT_ASSERT_EQUAL(1.0, pmt::to_double(p1));
   CPPUNIT_ASSERT_EQUAL(1.0, pmt::to_double(pmt::from_long(1)));
+
+  pmt::pmt_t p2 = pmt::from_float(1);
+  pmt::pmt_t m2 = pmt::from_float(-1);
+  CPPUNIT_ASSERT(pmt::is_real(p2));
+  CPPUNIT_ASSERT(pmt::is_real(m2));
+  CPPUNIT_ASSERT_THROW(pmt::to_float(pmt::PMT_T), pmt::wrong_type);
+  CPPUNIT_ASSERT_EQUAL(float(-1.0), pmt::to_float(m2));
+  CPPUNIT_ASSERT_EQUAL(float(1.0), pmt::to_float(p2));
+  CPPUNIT_ASSERT_EQUAL(float(1.0), pmt::to_float(pmt::from_long(1)));
 }
 
 void
@@ -478,7 +487,7 @@ qa_pmt_prims::test_any()
 
 // ------------------------------------------------------------------------
 
-class qa_pmt_msg_accepter_nop : public gr::messages::msg_accepter 
+class qa_pmt_msg_accepter_nop : public gr::messages::msg_accepter
 {
 public:
   qa_pmt_msg_accepter_nop(){};
@@ -496,7 +505,7 @@ qa_pmt_prims::test_msg_accepter()
   boost::any a0;
   a0 = std::string("Hello!");
   pmt::pmt_t p0 = pmt::make_any(a0);
-  
+
   gr::messages::msg_accepter_sptr ma0 =                                 \
     gr::messages::msg_accepter_sptr(new qa_pmt_msg_accepter_nop());
   pmt::pmt_t p1 = pmt::make_msg_accepter(ma0);

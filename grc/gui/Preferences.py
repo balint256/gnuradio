@@ -84,14 +84,11 @@ def blocks_window_position(pos=None):
         try: return _config_parser.getint('main', 'blocks_window_position') or 1 #greater than 0
         except: return -1
 
-def reports_window_visibility(visible=None):
-    if visible is not None: _config_parser.set('main', 'reports_window_visible', visible)
+def bool_entry(key, active=None, default=True):
+    if active is not None:
+        _config_parser.set('main', key, active)
     else:
-        try: return _config_parser.getboolean('main', 'reports_window_visible')
-        except: return True
-
-def blocks_window_visibility(visible=None):
-    if visible is not None: _config_parser.set('main', 'blocks_window_visible', visible)
-    else:
-        try: return _config_parser.getboolean('main', 'blocks_window_visible')
-        except: return True
+        try:
+            return _config_parser.getboolean('main', key)
+        except:
+            return default

@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2004-2011,2013 Free Software Foundation, Inc.
+ * Copyright 2004-2011,2013-2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -40,9 +40,10 @@
 namespace gr {
   namespace audio {
 
-    AUDIO_REGISTER_SOURCE(REG_PRIO_HIGH, windows)(int sampling_rate,
-                                                  const std::string &device_name,
-                                                  bool)
+    source::sptr
+    windows_source_fcn(int sampling_rate,
+                       const std::string &device_name,
+                       bool)
     {
       return source::sptr
         (new windows_source(sampling_rate, device_name));
@@ -83,7 +84,7 @@ namespace gr {
       int format = AFMT_S16_NE;
       int orig_format = format;
       if(ioctl(d_fd, SNDCTL_DSP_SETFMT, &format) < 0) {
-        std::cerr << "audio_windows_source: " << d_device_name 
+        std::cerr << "audio_windows_source: " << d_device_name
                   << " ioctl failed\n";
         perror(d_device_name.c_str());
         throw std::runtime_error("audio_windows_source");

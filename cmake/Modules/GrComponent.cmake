@@ -46,9 +46,8 @@ function(GR_REGISTER_COMPONENT name var)
         message(STATUS "  Dependency ${dep} = ${${dep}}")
     endforeach(dep)
 
-    #if the user set the var to force, we note this
-    if("${${var}}" STREQUAL "FORCE")
-        set(${var} ON)
+    #if the user set the var to force on, we note this
+    if("${${var}}" STREQUAL "ON")
         set(var_force TRUE)
     else()
         set(var_force FALSE)
@@ -90,6 +89,12 @@ function(GR_REGISTER_COMPONENT name var)
     set(_gr_enabled_components ${_gr_enabled_components} CACHE INTERNAL "" FORCE)
     set(_gr_disabled_components ${_gr_disabled_components} CACHE INTERNAL "" FORCE)
 endfunction(GR_REGISTER_COMPONENT)
+
+
+function(GR_APPEND_SUBCOMPONENT name)
+  list(APPEND _gr_enabled_components "* ${name}")
+  set(_gr_enabled_components ${_gr_enabled_components} CACHE INTERNAL "" FORCE)
+endfunction(GR_APPEND_SUBCOMPONENT name)
 
 ########################################################################
 # Print the registered component summary

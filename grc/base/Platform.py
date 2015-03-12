@@ -35,7 +35,7 @@ class Platform(_Element):
                  license='', website=None, colors=None):
         """
         Make a platform from the arguments.
-        
+
         Args:
             name: the platform name
             version: the version string
@@ -47,13 +47,19 @@ class Platform(_Element):
             colors: a list of title, color_spec tuples
             license: a multi-line license (first line is copyright)
             website: the website url for this platform
-        
+
         Returns:
             a platform object
         """
         _Element.__init__(self)
         self._name = name
-        self._version = version
+        # Save the verion string to the first
+        self._version = version[0]
+        self._version_major = version[1]
+        self._version_api = version[2]
+        self._version_minor = version[3]
+        self._version_short = version[1] + "." + version[2] + "." + version[3]
+
         self._key = key
         self._license = license
         self._website = website
@@ -92,7 +98,8 @@ class Platform(_Element):
 
     def iter_xml_files(self):
         """Iterator for block descriptions and category trees"""
-        for block_path in self._block_paths:
+        get_path = lambda x: os.path.abspath(os.path.expanduser(x))
+        for block_path in map(get_path, self._block_paths):
             if os.path.isfile(block_path):
                 yield block_path
             elif os.path.isdir(block_path):
@@ -125,10 +132,10 @@ class Platform(_Element):
         """
         Parse a saved flow graph file.
         Ensure that the file exists, and passes the dtd check.
-        
+
         Args:
             flow_graph_file: the flow graph file
-        
+
         Returns:
             nested data
         @throws exception if the validation fails
@@ -143,7 +150,7 @@ class Platform(_Element):
         Load a block tree with categories and blocks.
         Step 1: Load all blocks from the xml specification.
         Step 2: Load blocks with builtin category specifications.
-        
+
         Args:
             block_tree: the block tree object
         """
@@ -192,6 +199,11 @@ class Platform(_Element):
 
     def get_name(self): return self._name
     def get_version(self): return self._version
+    def get_version_major(self): return self._version_major
+    def get_version_api(self): return self._version_api
+    def get_version_minor(self): return self._version_minor
+    def get_version_short(self): return self._version_short
+
     def get_key(self): return self._key
     def get_license(self): return self._license
     def get_website(self): return self._website

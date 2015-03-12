@@ -17,48 +17,55 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+import time
 from . import odict
 from Element import Element
 from .. gui import Messages
+from . Constants import FLOW_GRAPH_FILE_FORMAT_VERSION
+
 
 class FlowGraph(Element):
 
     def __init__(self, platform):
         """
         Make a flow graph from the arguments.
-        
+
         Args:
             platform: a platforms with blocks and contrcutors
-        
+
         Returns:
             the flow graph object
         """
         #initialize
         Element.__init__(self, platform)
+        self._elements = []
+        self._timestamp = time.ctime()
         #inital blank import
         self.import_data()
 
     def _get_unique_id(self, base_id=''):
         """
         Get a unique id starting with the base id.
-        
+
         Args:
             base_id: the id starts with this and appends a count
-        
+
         Returns:
             a unique id
         """
         index = 0
         while True:
-            id = '%s_%d'%(base_id, index)
-            index = index + 1
+            id = '%s_%d' % (base_id, index)
+            index += 1
             #make sure that the id is not used by another block
             if not filter(lambda b: b.get_id() == id, self.get_blocks()): return id
 
-    def __str__(self): return 'FlowGraph - %s(%s)'%(self.get_option('title'), self.get_option('id'))
+    def __str__(self):
+        return 'FlowGraph - %s(%s)' % (self.get_option('title'), self.get_option('id'))
+
     def rewrite(self):
         def refactor_bus_structure():
-            
+
             for block in self.get_blocks():
                 for direc in ['source', 'sink']:
                     if direc == 'source':
@@ -69,11 +76,11 @@ class FlowGraph(Element):
                         get_p = block.get_sinks;
                         get_p_gui = block.get_sinks_gui
                         bus_structure = block.form_bus_structure('sink');
-                
+
                     if 'bus' in map(lambda a: a.get_type(), get_p_gui()):
-                    
-                            
-                        
+
+
+
                         if len(get_p_gui()) > len(bus_structure):
                             times = range(len(bus_structure), len(get_p_gui()));
                             for i in times:
@@ -84,17 +91,17 @@ class FlowGraph(Element):
                             n = {'name':'bus','type':'bus'};
                             if True in map(lambda a: isinstance(a.get_nports(), int), get_p()):
                                 n['nports'] = str(1);
-                            
-                            times = range(len(get_p_gui()), len(bus_structure));    
-                            
+
+                            times = range(len(get_p_gui()), len(bus_structure));
+
                             for i in times:
                                 n['key'] = str(len(get_p()));
                                 n = odict(n);
                                 port = block.get_parent().get_parent().Port(block=block, n=n, dir=direc);
                                 get_p().append(port);
-                                
-                                
-                                
+
+
+
         for child in self.get_children(): child.rewrite()
         refactor_bus_structure();
 
@@ -102,10 +109,10 @@ class FlowGraph(Element):
         """
         Get the option for a given key.
         The option comes from the special options block.
-        
+
         Args:
             key: the param key for the options block
-        
+
         Returns:
             the value held by that param
         """
@@ -132,7 +139,7 @@ class FlowGraph(Element):
         """
         Get a list of all the elements.
         Always ensure that the options block is in the list (only once).
-        
+
         Returns:
             the element list
         """
@@ -146,7 +153,7 @@ class FlowGraph(Element):
     def get_enabled_blocks(self):
         """
         Get a list of all blocks that are enabled.
-        
+
         Returns:
             a list of blocks
         """
@@ -155,7 +162,7 @@ class FlowGraph(Element):
     def get_enabled_connections(self):
         """
         Get a list of all connections that are enabled.
-        
+
         Returns:
             a list of connections
         """
@@ -165,10 +172,10 @@ class FlowGraph(Element):
         """
         Get a new block of the specified key.
         Add the block to the list of elements.
-        
+
         Args:
             key: the block key
-        
+
         Returns:
             the new block or None if not found
         """
@@ -184,12 +191,12 @@ class FlowGraph(Element):
     def connect(self, porta, portb):
         """
         Create a connection between porta and portb.
-        
+
         Args:
             porta: a port
             portb: another port
         @throw Exception bad connection
-        
+
         Returns:
             the new connection
         """
@@ -223,7 +230,7 @@ class FlowGraph(Element):
     def evaluate(self, expr):
         """
         Evaluate the expression.
-        
+
         Args:
             expr: the string expression
         @throw NotImplementedError
@@ -237,30 +244,41 @@ class FlowGraph(Element):
         """
         Export this flow graph to nested data.
         Export all block and connection data.
-        
+
         Returns:
             a nested data odict
         """
-        import time
         n = odict()
-        n['timestamp'] = time.ctime()
+        n['timestamp'] = self._timestamp
         n['block'] = [block.export_data() for block in self.get_blocks()]
         n['connection'] = [connection.export_data() for connection in self.get_connections()]
-        return odict({'flow_graph': n})
+        instructions = odict({
+            'created': self.get_parent().get_version_short(),
+            'format': FLOW_GRAPH_FILE_FORMAT_VERSION,
+        })
+        return odict({'flow_graph': n, '_instructions': instructions})
 
     def import_data(self, n=None):
         """
         Import blocks and connections into this flow graph.
         Clear this flowgraph of all previous blocks and connections.
         Any blocks or connections in error will be ignored.
-        
+
         Args:
             n: the nested data odict
         """
+        errors = False
         #remove previous elements
         self._elements = list()
+        # set file format
+        try:
+            instructions = n.find('_instructions') or {}
+            file_format = int(instructions.get('format', '0')) or self._guess_file_format_1(n)
+        except:
+            file_format = 0
         #use blank data if none provided
         fg_n = n and n.find('flow_graph') or odict()
+        self._timestamp = fg_n.find('timestamp') or time.ctime()
         blocks_n = fg_n.findall('block')
         connections_n = fg_n.findall('connection')
         #create option block
@@ -296,9 +314,11 @@ class FlowGraph(Element):
                 #get the blocks
                 source_block = self.get_block(source_block_id)
                 sink_block = self.get_block(sink_block_id)
-                # update numeric message ports keys
-                source_key = self.update_message_port_key(source_key, source_block.get_sources())
-                sink_key = self.update_message_port_key(sink_key, sink_block.get_sinks())
+                # fix old, numeric message ports keys
+                if file_format < 1:
+                    source_key, sink_key = self._update_old_message_port_keys(
+                        source_key, sink_key, source_block, sink_block
+                    )
                 #verify the ports
                 if source_key not in source_block.get_source_keys():
                     # dummy blocks learn their ports here
@@ -317,15 +337,16 @@ class FlowGraph(Element):
                 sink = sink_block.get_sink(sink_key)
                 #build the connection
                 self.connect(source, sink)
-            except LookupError, e: Messages.send_error_load(
-                'Connection between %s(%s) and %s(%s) could not be made.\n\t%s'%(
-                    source_block_id, source_key, sink_block_id, sink_key, e
-                )
-            )
+            except LookupError, e:
+                Messages.send_error_load(
+                    'Connection between %s(%s) and %s(%s) could not be made.\n\t%s'%(
+                    source_block_id, source_key, sink_block_id, sink_key, e))
+                errors = True
         self.rewrite() #global rewrite
+        return errors
 
-
-    def update_message_port_key(self, key, ports):
+    @staticmethod
+    def _update_old_message_port_keys(source_key, sink_key, source_block, sink_block):
         """Backward compatibility for message port keys
 
         Message ports use their names as key (like in the 'connect' method).
@@ -334,18 +355,32 @@ class FlowGraph(Element):
         respective port. The correct message port is deduced from the integer
         value of the key (assuming the order has not changed).
 
-        :param key: the port key to be updated
-        :param ports: list of candidate ports
-        :returns: the updated key or the original one
+        The connection ends are updated only if both ends translate into a
+        message port.
         """
-        if key.isdigit():  # don't bother current message port keys
-            try:
-                port = ports[int(key)]  # get port (assuming liner indexed keys)
-                if port.get_type() == "message":
-                    return port.get_key()  # for message ports get updated key
-            except IndexError:
-                pass
-        return key  # do nothing
+        try:
+            # get ports using the "old way" (assuming liner indexed keys)
+            source_port = source_block.get_sources()[int(source_key)]
+            sink_port = sink_block.get_sinks()[int(sink_key)]
+            if source_port.get_type() == "message" and sink_port.get_type() == "message":
+                source_key, sink_key = source_port.get_key(), sink_port.get_key()
+        except (ValueError, IndexError):
+            pass
+        return source_key, sink_key  # do nothing
+
+    @staticmethod
+    def _guess_file_format_1(n):
+        """Try to guess the file format for flow-graph files without version tag"""
+        try:
+            has_non_numeric_message_keys = any(not (
+                connection_n.find('source_key').isdigit() and
+                connection_n.find('sink_key').isdigit()
+            ) for connection_n in n.find('flow_graph').findall('connection'))
+            if has_non_numeric_message_keys:
+                return 1
+        except:
+            pass
+        return 0
 
 
 def _initialize_dummy_block(block, block_n):
@@ -355,7 +390,7 @@ def _initialize_dummy_block(block, block_n):
     """
     block._key = block_n.find('key')
     block.is_dummy_block = lambda: True
-    block.is_valid =  lambda: False
+    block.is_valid = lambda: False
     block.get_enabled = lambda: False
     for param_n in block_n.findall('param'):
         if param_n['key'] not in block.get_param_keys():
@@ -364,7 +399,7 @@ def _initialize_dummy_block(block, block_n):
 
 
 def _dummy_block_add_port(block, key, dir):
-    """This is so ugly... Add a port to a dummy-fied block"""
+    """This is so ugly... Add a port to a dummy-field block"""
     port_n = odict({'name': '?', 'key': key, 'type': ''})
     port = block.get_parent().get_parent().Port(block=block, n=port_n, dir=dir)
     if port.is_source():

@@ -66,6 +66,18 @@ if(COMPILER_NAME MATCHES "GNU")
 endif()
 
 ########################################################################
+# check for posix_memalign, since some OSs do not internally define
+# _XOPEN_SOURCE or _POSIX_C_SOURCE; they leave this to the user.
+########################################################################
+
+include(CheckFunctionExists)
+CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
+
+if(HAVE_POSIX_MEMALIGN)
+      add_definitions(-DHAVE_POSIX_MEMALIGN)
+endif(HAVE_POSIX_MEMALIGN)
+
+########################################################################
 # detect x86 flavor of CPU
 ########################################################################
 if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^(i.86|x86|x86_64|amd64)$")
@@ -101,7 +113,7 @@ macro(check_arch arch_name)
         if (NOT ${have_flag})
             set(have_${arch_name} FALSE)
         endif()
-    endforeach(flag)
+    endforeach()
     if (have_${arch_name})
         list(APPEND available_archs ${arch_name})
     endif()
@@ -205,6 +217,22 @@ if(${HAVE_AVX_CVTPI32_PS})
     add_definitions(-DHAVE_AVX_CVTPI32_PS)
 endif()
 
+########################################################################
+# if the CPU is not x86, eliminate all Intel SIMD
+########################################################################
+
+if(NOT CPU_IS_x86)
+    OVERRULE_ARCH(3dnow "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(mmx "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(sse "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(sse2 "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(sse3 "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(ssse3 "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(sse4_a "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(sse4_1 "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(sse4_2 "Architecture is not x86 or x86_64")
+    OVERRULE_ARCH(avx "Architecture is not x86 or x86_64")
+endif(NOT CPU_IS_x86)
 
 ########################################################################
 # implement overruling in the ORC case,
@@ -366,6 +394,49 @@ include_directories(
 )
 
 ########################################################################
+# Handle ASM support
+#  on by default, but let users turn it off
+########################################################################
+if(${CMAKE_VERSION} VERSION_GREATER "2.8.9")
+  set(ASM_ARCHS_AVAILABLE "armv7")
+
+  set(FULL_C_FLAGS "${CMAKE_C_FLAGS}" "${CMAKE_CXX_COMPILER_ARG1}")
+
+  # sort through a list of all architectures we have ASM for
+  # if we find one that matches our current system architecture
+  # set up the assembler flags and include the source files
+  foreach(ARCH ${ASM_ARCHS_AVAILABLE})
+    string(REGEX MATCH "${ARCH}" ASM_ARCH "${FULL_C_FLAGS}")
+    if( ASM_ARCH STREQUAL "armv7" )
+      message(STATUS "---- Adding ASM files") # we always use ATT syntax
+      message(STATUS "-- Detected armv7 architecture; enabling ASM")
+      # setup architecture specific assembler flags
+      set(ARCH_ASM_FLAGS "-mfpu=neon -g")
+      # then add the files
+      include_directories(${CMAKE_SOURCE_DIR}/kernels/volk/asm/neon)
+      file(GLOB asm_files ${CMAKE_SOURCE_DIR}/kernels/volk/asm/neon/*.s)
+      foreach(asm_file ${asm_files})
+        list(APPEND volk_sources ${asm_file})
+        message(STATUS "Adding source file: ${asm_file}")
+      endforeach(asm_file)
+    endif()
+    enable_language(ASM)
+    set(CMAKE_ASM_FLAGS ${ARCH_ASM_FLAGS})
+    message(STATUS "c flags: ${FULL_C_FLAGS}")
+    message(STATUS "asm flags: ${CMAKE_ASM_FLAGS}")
+  endforeach(ARCH)
+
+else(${CMAKE_VERSION} VERSION_GREATER "2.8.9")
+  message(STATUS "Not enabling ASM support. CMake >= 2.8.10 required.")
+  foreach(machine_name ${available_machines})
+    string(REGEX MATCH "neon" NEON_MACHINE ${machine_name})
+    if( NEON_MACHINE STREQUAL "neon")
+      message(FATAL_ERROR "CMake >= 2.8.10 is required for ARM NEON support")
+    endif()
+  endforeach()
+endif(${CMAKE_VERSION} VERSION_GREATER "2.8.9")
+
+########################################################################
 # Handle orc support
 ########################################################################
 if(ORC_FOUND)
@@ -420,7 +491,8 @@ list(APPEND volk_sources ${CMAKE_CURRENT_BINARY_DIR}/constants.c)
 # Setup the volk sources list and library
 ########################################################################
 if(NOT WIN32)
-    add_definitions(-fvisibility=hidden)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 endif()
 
 list(APPEND volk_sources
@@ -456,6 +528,19 @@ install(TARGETS volk
     RUNTIME DESTINATION bin              COMPONENT "volk_runtime" # .dll file
 )
 
+if(ENABLE_STATIC_LIBS)
+  add_library(volk_static STATIC ${volk_sources})
+
+  if(NOT WIN32)
+    set_target_properties(volk_static
+      PROPERTIES OUTPUT_NAME volk)
+  endif(NOT WIN32)
+
+  install(TARGETS volk_static
+    ARCHIVE DESTINATION lib${LIB_SUFFIX} COMPONENT "volk_devel"   # .lib file
+    )
+endif(ENABLE_STATIC_LIBS)
+
 ########################################################################
 # Build the QA test application
 ########################################################################
@@ -479,4 +564,3 @@ if(Boost_FOUND)
     add_test(qa_volk_test_all test_all)
 
 endif(Boost_FOUND)
-

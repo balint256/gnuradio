@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /*
- * Copyright 2008-2012 Free Software Foundation, Inc.
+ * Copyright 2008-2012,2014 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -81,7 +81,7 @@ private:
 /***********************************************************************
  * Widget to provide mouse pointer coordinate text
  **********************************************************************/
-class WaterfallZoomer: public QwtPlotZoomer, public TimeScaleData, 
+class WaterfallZoomer: public QwtPlotZoomer, public TimeScaleData,
 		       public FreqOffsetAndPrecisionClass
 {
 public:
@@ -139,6 +139,7 @@ WaterfallDisplayPlot::WaterfallDisplayPlot(int nplots, QWidget* parent)
 
   resize(parent->width(), parent->height());
   d_numPoints = 1024;
+  d_half_freq = false;
 
   setAxisTitle(QwtPlot::xBottom, "Frequency (Hz)");
   setAxisScaleDraw(QwtPlot::xBottom, new FreqDisplayScaleDraw(0));
@@ -168,7 +169,7 @@ WaterfallDisplayPlot::WaterfallDisplayPlot(int nplots, QWidget* parent)
 
     d_intensity_color_map_type.push_back(INTENSITY_COLOR_MAP_TYPE_MULTI_COLOR);
     setIntensityColorMapType(i, d_intensity_color_map_type[i],
-			     QColor("white"), QColor("white"));    
+			     QColor("white"), QColor("white"));
 
     setAlpha(i, 255/d_nplots);
   }
@@ -225,8 +226,13 @@ WaterfallDisplayPlot::setFrequencyRange(const double centerfreq,
 					const double bandwidth,
 					const double units, const std::string &strunits)
 {
-  double startFreq  = (centerfreq - bandwidth/2.0f) / units;
-  double stopFreq   = (centerfreq + bandwidth/2.0f) / units;
+  double startFreq;
+  double stopFreq = (centerfreq + bandwidth/2.0f) / units;
+  if(d_half_freq)
+    startFreq = 0;
+  else
+    startFreq = (centerfreq - bandwidth/2.0f) / units;
+
 
   d_xaxis_multiplier = units;
 
@@ -273,10 +279,13 @@ WaterfallDisplayPlot::plotNewData(const std::vector<double*> dataPoints,
 				  const gr::high_res_timer_type timestamp,
 				  const int droppedFrames)
 {
+  int64_t _npoints_in = d_half_freq ? numDataPoints/2 : numDataPoints;
+  int64_t _in_index = d_half_freq ? _npoints_in : 0;
+
   if(!d_stop) {
     if(numDataPoints > 0){
-      if(numDataPoints != d_numPoints){
-	d_numPoints = numDataPoints;
+      if(_npoints_in != d_numPoints) {
+        d_numPoints = _npoints_in;
 
 	resetAxis();
 
@@ -298,7 +307,8 @@ WaterfallDisplayPlot::plotNewData(const std::vector<double*> dataPoints,
       ((WaterfallZoomer*)d_zoomer)->setZeroTime(timestamp);
 
       for(int i = 0; i < d_nplots; i++) {
-	d_data[i]->addFFTData(dataPoints[i], numDataPoints, droppedFrames);
+	d_data[i]->addFFTData(&(dataPoints[i][_in_index]),
+                              _npoints_in, droppedFrames);
 	d_data[i]->incrementNumLinesToUpdate();
 	d_spectrogram[i]->invalidateCache();
 	d_spectrogram[i]->itemChanged();
@@ -456,6 +466,26 @@ WaterfallDisplayPlot::setIntensityColorMapType(const int which,
 #endif
       break;
     }
+    case INTENSITY_COLOR_MAP_TYPE_SUNSET: {
+      d_intensity_color_map_type[which] = newType;
+#if QWT_VERSION < 0x060000
+      ColorMap_Sunset colorMap;
+      d_spectrogram[which]->setColorMap(colorMap);
+#else
+      d_spectrogram[which]->setColorMap(new ColorMap_Sunset());
+#endif
+      break;
+    }
+    case INTENSITY_COLOR_MAP_TYPE_COOL: {
+      d_intensity_color_map_type[which] = newType;
+#if QWT_VERSION < 0x060000
+      ColorMap_Cool colorMap;
+      d_spectrogram[which]->setColorMap(colorMap);
+#else
+      d_spectrogram[which]->setColorMap(new ColorMap_Cool());
+#endif
+      break;
+    }
     case INTENSITY_COLOR_MAP_TYPE_USER_DEFINED:{
       d_user_defined_low_intensity_color = lowColor;
       d_user_defined_high_intensity_color = highColor;
@@ -549,6 +579,10 @@ WaterfallDisplayPlot::_updateIntensityRangeDisplay()
       rightAxis->setColorMap(intv, new ColorMap_BlackHot()); break;
     case INTENSITY_COLOR_MAP_TYPE_INCANDESCENT:
       rightAxis->setColorMap(intv, new ColorMap_Incandescent()); break;
+    case INTENSITY_COLOR_MAP_TYPE_SUNSET:
+      rightAxis->setColorMap(intv, new ColorMap_Sunset()); break;
+    case INTENSITY_COLOR_MAP_TYPE_COOL:
+      rightAxis->setColorMap(intv, new ColorMap_Cool()); break;
     case INTENSITY_COLOR_MAP_TYPE_USER_DEFINED:
       rightAxis->setColorMap(intv, new ColorMap_UserDefined(d_user_defined_low_intensity_color,
 							    d_user_defined_high_intensity_color));
@@ -571,5 +605,14 @@ WaterfallDisplayPlot::_updateIntensityRangeDisplay()
   // Draw again
   replot();
 }
+
+void
+WaterfallDisplayPlot::setPlotPosHalf(bool half)
+{
+  d_half_freq = half;
+  if(half)
+    d_start_frequency = 0;
+}
+
 
 #endif /* WATERFALL_DISPLAY_PLOT_C */

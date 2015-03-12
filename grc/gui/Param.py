@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import Utils
 from Element import Element
+from . Constants import PARAM_FONT
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -184,7 +185,7 @@ class FileParam(EntryParam):
 
 PARAM_MARKUP_TMPL="""\
 #set $foreground = $param.is_valid() and 'black' or 'red'
-<span foreground="$foreground" font_desc="Sans 7.5"><b>$encode($param.get_name()): </b>$encode(repr($param))</span>"""
+<span foreground="$foreground" font_desc="$font"><b>$encode($param.get_name()): </b>$encode(repr($param))</span>"""
 
 PARAM_LABEL_MARKUP_TMPL="""\
 #set $foreground = $modified and 'blue' or $param.is_valid() and 'black' or 'red'
@@ -227,7 +228,7 @@ class Param(Element):
         An enum requires and combo parameter.
         A non-enum with options gets a combined entry/combo parameter.
         All others get a standard entry parameter.
-        
+
         Returns:
             gtk input class
         """
@@ -245,8 +246,8 @@ class Param(Element):
     def get_markup(self):
         """
         Get the markup for this param.
-        
+
         Returns:
             a pango markup string
         """
-        return Utils.parse_template(PARAM_MARKUP_TMPL, param=self)
+        return Utils.parse_template(PARAM_MARKUP_TMPL, param=self, font=PARAM_FONT)

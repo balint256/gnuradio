@@ -31,15 +31,17 @@
 namespace gr {
   namespace blocks {
 
-    float_to_complex::sptr float_to_complex::make(size_t vlen)
+    float_to_complex::sptr
+    float_to_complex::make(size_t vlen)
     {
-      return gnuradio::get_initial_sptr(new float_to_complex_impl(vlen));
+      return gnuradio::get_initial_sptr
+        (new float_to_complex_impl(vlen));
     }
 
     float_to_complex_impl::float_to_complex_impl(size_t vlen)
       : sync_block("float_to_complex",
-		      io_signature::make (1, 2, sizeof(float)*vlen),
-		      io_signature::make (1, 1, sizeof(gr_complex)*vlen)),
+                   io_signature::make(1, 2, sizeof(float)*vlen),
+                   io_signature::make(1, 1, sizeof(gr_complex)*vlen)),
 	d_vlen(vlen)
     {
       const int alignment_multiple =
@@ -63,14 +65,15 @@ namespace gr {
 	break;
 
       case 2:
-	for (size_t j = 0; j < noutput_items*d_vlen; j++)
-	  out[j] = gr_complex (r[j], i[j]);
+	//for (size_t j = 0; j < noutput_items*d_vlen; j++)
+	//  out[j] = gr_complex (r[j], i[j]);
+        volk_32f_x2_interleave_32fc(out, r, i, noutput_items*d_vlen);
 	break;
-	
+
       default:
 	assert (0);
       }
-      
+
       return noutput_items;
     }
 

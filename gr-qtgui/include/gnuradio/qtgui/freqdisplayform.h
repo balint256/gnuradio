@@ -49,6 +49,19 @@ class FreqDisplayForm : public DisplayForm
   float getFFTAverage() const;
   gr::filter::firdes::win_type getFFTWindowType() const;
 
+  // Trigger methods
+  gr::qtgui::trigger_mode getTriggerMode() const;
+  float getTriggerLevel() const;
+  int getTriggerChannel() const;
+  std::string getTriggerTagKey() const;
+
+
+  // returns the frequency that was last double-clicked on by the user
+  float getClickedFreq() const;
+
+  // checks if there was a double-click event; reset if there was
+  bool checkClicked();
+
 public slots:
   void customEvent(QEvent *e);
 
@@ -60,10 +73,25 @@ public slots:
   void setFrequencyRange(const double centerfreq,
 			 const double bandwidth);
   void setYaxis(double min, double max);
+  void setYMax(const QString &m);
+  void setYMin(const QString &m);
   void autoScale(bool en);
+  void setPlotPosHalf(bool half);
+  void clearMaxHold();
+  void clearMinHold();
+
+  // Trigger slots
+  void updateTrigger(gr::qtgui::trigger_mode mode);
+  void setTriggerMode(gr::qtgui::trigger_mode mode);
+  void setTriggerLevel(QString s);
+  void setTriggerLevel(float level);
+  void setTriggerChannel(int chan);
+  void setTriggerTagKey(QString s);
+  void setTriggerTagKey(const std::string &s);
 
 private slots:
   void newData(const QEvent *updateEvent);
+  void onPlotPointSelected(const QPointF p);
 
 private:
   uint64_t d_num_real_data_points;
@@ -73,11 +101,26 @@ private:
   int d_fftsize;
   float d_fftavg;
   gr::filter::firdes::win_type d_fftwintype;
+  double d_units;
+
+  bool d_clicked;
+  double d_clicked_freq;
 
   FFTSizeMenu *d_sizemenu;
   FFTAverageMenu *d_avgmenu;
   FFTWindowMenu *d_winmenu;
+  QAction *d_clearmin_act, *d_clearmax_act;
 
+  QMenu *d_triggermenu;
+  TriggerModeMenu *d_tr_mode_menu;
+  PopupMenu *d_tr_level_act;
+  TriggerChannelMenu *d_tr_channel_menu;
+  PopupMenu *d_tr_tag_key_act;
+
+  gr::qtgui::trigger_mode d_trig_mode;
+  float d_trig_level;
+  int d_trig_channel;
+  std::string d_trig_tag_key;
 };
 
 #endif /* FREQ_DISPLAY_FORM_H */

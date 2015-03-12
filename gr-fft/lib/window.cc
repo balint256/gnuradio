@@ -31,12 +31,12 @@ namespace gr {
   namespace fft {
 
 #define IzeroEPSILON 1E-21               /* Max error acceptable in Izero */
-    
+
     static double Izero(double x)
     {
       double sum, u, halfx, temp;
       int n;
-      
+
       sum = u = n = 1;
       halfx = x/2.0;
       do {
@@ -180,7 +180,7 @@ namespace gr {
     {
       return coswindow(ntaps, 0.21747, 0.45325, 0.28256, 0.04672);
     }
-    
+
     std::vector<float>
     window::blackman4(int ntaps)
     {
@@ -209,17 +209,35 @@ namespace gr {
     std::vector<float>
     window::nuttal(int ntaps)
     {
+      return nuttall(ntaps);
+    }
+
+    std::vector<float>
+    window::nuttall(int ntaps)
+    {
       return coswindow(ntaps, 0.3635819, 0.4891775, 0.1365995, 0.0106411);
     }
 
     std::vector<float>
     window::blackman_nuttal(int ntaps)
     {
-      return nuttal(ntaps);
+      return nuttall(ntaps);
+    }
+
+    std::vector<float>
+    window::blackman_nuttall(int ntaps)
+    {
+      return nuttall(ntaps);
     }
 
     std::vector<float>
     window::nuttal_cfd(int ntaps)
+    {
+      return nuttall_cfd(ntaps);
+    }
+
+    std::vector<float>
+    window::nuttall_cfd(int ntaps)
     {
       return coswindow(ntaps, 0.355768, 0.487396, 0.144232, 0.012604);
     }
