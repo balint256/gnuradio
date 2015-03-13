@@ -72,6 +72,7 @@ namespace gr {
       ::uhd::freq_range_t get_freq_range(size_t chan);
       double get_gain(size_t chan);
       double get_gain(const std::string &name, size_t chan);
+      double get_normalized_gain(size_t chan);
       std::vector<std::string> get_gain_names(size_t chan);
       ::uhd::gain_range_t get_gain_range(size_t chan);
       ::uhd::gain_range_t get_gain_range(const std::string &name, size_t chan);
@@ -98,6 +99,7 @@ namespace gr {
                                          size_t chan);
       void set_gain(double gain, size_t chan);
       void set_gain(double gain, const std::string &name, size_t chan);
+      void set_normalized_gain(double gain, size_t chan);
       void set_antenna(const std::string &ant, size_t chan);
       void set_bandwidth(double bandwidth, size_t chan);
       double get_bandwidth(size_t chan);
@@ -114,6 +116,7 @@ namespace gr {
       void set_time_unknown_pps(const ::uhd::time_spec_t &time_spec);
       void set_command_time(const ::uhd::time_spec_t &time_spec, size_t mboard);
       void set_user_register(const uint8_t addr, const uint32_t data, size_t mboard);
+      void set_stream_args(const ::uhd::stream_args_t &stream_args);
       void set_start_time(const ::uhd::time_spec_t &time);
 
       void issue_stream_cmd(const ::uhd::stream_cmd_t &cmd);

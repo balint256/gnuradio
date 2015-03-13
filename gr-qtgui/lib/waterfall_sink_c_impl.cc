@@ -458,6 +458,12 @@ namespace gr {
       }
     }
 
+    void
+    waterfall_sink_c_impl::set_time_per_fft(double t)
+    {
+      d_main_gui->setTimePerFFT(t);
+    }
+
     int
     waterfall_sink_c_impl::work(int noutput_items,
 				gr_vector_const_void_star &input_items,
@@ -488,7 +494,7 @@ namespace gr {
               for(int x = 0; x < d_fftsize; x++) {
                 d_magbufs[n][x] = (double)((1.0-d_fftavg)*d_magbufs[n][x] + (d_fftavg)*d_fbuf[x]);
               }
-              //volk_32f_convert_64f_a(d_magbufs[n], d_fbuf, d_fftsize);
+              //volk_32f_convert_64f(d_magbufs[n], d_fbuf, d_fftsize);
             }
 
 	    d_last_time = gr::high_res_timer_now();

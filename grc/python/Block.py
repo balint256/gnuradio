@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 """
 
+from collections import defaultdict
+
 from .. base.Block import Block as _Block
 from .. gui.Block import Block as _GUIBlock
 from . FlowGraph import _variable_matcher
@@ -75,6 +77,7 @@ class Block(_Block, _GUIBlock):
             return clean_bus_structure
 
         except: return ''
+
     def throttle(self): return bool(self._throttle)
 
     def validate(self):
@@ -99,6 +102,11 @@ class Block(_Block, _GUIBlock):
                 self.get_parent().evaluate(value)
             except Exception as err:
                 self.add_error_message('Value "%s" cannot be evaluated:\n%s' % (value, err))
+        # check if this is a GUI block and matches the selected generate option
+        current_generate_option = self.get_parent().get_option('generate_options')
+        for label, option in (('WX GUI', 'wx_gui'), ('QT GUI', 'qt_gui')):
+            if self.get_name().startswith(label) and current_generate_option != option:
+                self.add_error_message("Can't generate this block in mode " + repr(option))
 
     def rewrite(self):
         """
@@ -127,8 +135,11 @@ class Block(_Block, _GUIBlock):
 
             self.back_ofthe_bus(ports)
             # renumber non-message/-msg ports
-            for i, port in enumerate(filter(lambda p: p.get_key().isdigit(), ports)):
-                port._key = str(i)
+            domain_specific_port_index = defaultdict(int)
+            for port in filter(lambda p: p.get_key().isdigit(), ports):
+                domain = port.get_domain()
+                port._key = str(domain_specific_port_index[domain])
+                domain_specific_port_index[domain] += 1
 
     def port_controller_modify(self, direction):
         """
