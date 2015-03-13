@@ -277,11 +277,7 @@ namespace gr {
       }
       return false;
     }
-    
-    const msg_queue_map_t& get_msg_map(void) const {
-      return msg_queue;
-    }
-    
+
     const pmt::pmt_t& get_msg_subscribers(void) const {
       return d_message_subscribers;
     }

@@ -44,11 +44,6 @@ namespace gr {
         d_vector_input(vector_input), d_swap(swap)
     {
     }
-    
-    void interleaved_short_to_complex_impl::set_swap(bool swap)
-    {
-		d_swap = swap;
-	}
 
     void interleaved_short_to_complex_impl::set_swap(bool swap)
     {

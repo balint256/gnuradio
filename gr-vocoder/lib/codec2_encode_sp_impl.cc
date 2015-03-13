@@ -65,6 +65,7 @@ namespace gr {
 	throw std::runtime_error("codec2_encode_sp_impl: codec2_create failed");
       d_samples_per_frame = samples_per_frame;
       d_bits_per_frame = bits_per_frame;
+      fprintf(stderr, "[%s<%i>] samples per frame: %d, bits per frame: %d\n", name().c_str(), unique_id(), samples_per_frame, bits_per_frame);
     }
 
     codec2_encode_sp_impl::~codec2_encode_sp_impl()

@@ -38,7 +38,7 @@ namespace gr {
       return gnuradio::get_initial_sptr(new pdu_to_tagged_stream_impl(type, tsb_tag_key, sleep_duration));
     }
 
-    pdu_to_tagged_stream_impl::pdu_to_tagged_stream_impl(pdu::vector_type type, const std::string& tsb_tag_key)
+    pdu_to_tagged_stream_impl::pdu_to_tagged_stream_impl(pdu::vector_type type, const std::string& tsb_tag_key, int sleep_duration)
       : tagged_stream_block("pdu_to_tagged_stream",
           io_signature::make(0, 0, 0),
           io_signature::make(1, 1, pdu::itemsize(type)),
