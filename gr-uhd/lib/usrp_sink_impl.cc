@@ -75,12 +75,13 @@ namespace gr {
         _curr_freq(stream_args.channels.size(), 0.0),
         _curr_lo_offset(stream_args.channels.size(), 0.0),
         _curr_gain(stream_args.channels.size(), 0.0),
-        _chans_to_tune(stream_args.channels.size())
+        _chans_to_tune(stream_args.channels.size()),
         _ignore_samples(false),
         _send_flush(false),
         _ignored_sample_count(0),
         _stream_immediately(stream_immediately),
-        _initial_start(false)
+        _initial_start(false),
+        _in_burst(false)
     {
       message_port_register_out(MSG_CTL_PORT_ID);
 
@@ -591,6 +592,11 @@ namespace gr {
       if(not _tags.empty())
         this->tag_work(ninput_items);
       
+      if ((_in_burst == false)/* && (_metadata.start_of_burst == false)*/ && (_metadata.end_of_burst == false))
+      {
+          //std::cout << boost::format("[%s<%d>] Samples %llu while not in burst!") % name() % unique_id() % ninput_items << std::endl;
+      }
+
       if (_metadata.end_of_burst && _send_flush)
       {
         //std::cout << "Finishing flush" << std::endl;
@@ -603,7 +609,6 @@ namespace gr {
         _ignored_sample_count += ninput_items;
         //std::cout << boost::format("[%s<%d>] Ignored %llu samples") % name() % unique_id() % _ignored_sample_count << std::endl;
         _ignore_samples = false;
-        assert(ninput_items == 1);
         return ninput_items;  // Will be 1
       }
       
@@ -747,6 +752,7 @@ namespace gr {
 
         //set the start of burst flag in the metadata; ignore if length_tag_key is not null
         else if(pmt::is_null(_length_tag_key) && pmt::equal(key, SOB_KEY)) {
+          //fprintf(stderr, "Found SOB @ %lld (samp0: %lld)\n", my_tag.offset, samp0_count);
           if (my_tag.offset != samp0_count) {
             max_count = my_tag_count;
             break;
@@ -754,6 +760,7 @@ namespace gr {
           // Bursty tx will not use time specs, unless a tx_time tag is also given.
           _metadata.has_time_spec = false;
           _metadata.start_of_burst = pmt::to_bool(value);
+          _in_burst = true;
         }
 
         //length_tag found; set the start of burst flag in the metadata
@@ -802,9 +809,11 @@ namespace gr {
          * Make sure that no more samples are allowed through.
          */
         else if(pmt::is_null(_length_tag_key) && pmt::equal(key, EOB_KEY)) {
+          //fprintf(stderr, "Found EOB @ %lld\n", my_tag_count);
           found_eob = true;
           max_count = my_tag_count + 1;
           _metadata.end_of_burst = pmt::to_bool(value);
+          _in_burst = false;
         }
       } // end foreach
 

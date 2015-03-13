@@ -144,7 +144,7 @@ namespace gr {
       ::uhd::tx_streamer::sptr _tx_stream;
 #endif
       bool _stream_immediately, _initial_start;
-      bool _ignore_samples, _send_flush;
+      bool _ignore_samples, _send_flush, _in_burst;
       uint64_t _ignored_sample_count;
       ::uhd::tx_metadata_t _metadata;
       double _sample_rate;
