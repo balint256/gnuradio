@@ -34,12 +34,16 @@ namespace gr {
     private:
       unsigned long long d_access_code;	// access code to locate start of packet
                                         //   access code is left justified in the word
+      unsigned long long d_inverted_access_code;
       unsigned long long d_data_reg;	// used to look for access_code
       unsigned long long d_flag_reg;	// keep track of decisions
       unsigned long long d_flag_bit;	// mask containing 1 bit which is location of new flag
+      unsigned long long d_invert_reg;
+      unsigned long long d_invert_bit;
       unsigned long long d_mask;	// masks access_code bits (top N bits are set where
                                         //   N is the number of bits in the access code)
       unsigned int d_threshold; 	// how many bits may be wrong in sync vector
+      bool d_invert;
 
     public:
       correlate_access_code_bb_impl(const std::string &access_code,
