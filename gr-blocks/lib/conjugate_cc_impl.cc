@@ -31,19 +31,25 @@
 namespace gr {
   namespace blocks {
 
-    conjugate_cc::sptr conjugate_cc::make()
+    conjugate_cc::sptr conjugate_cc::make(bool conjugate)
     {
-      return gnuradio::get_initial_sptr(new conjugate_cc_impl());
+      return gnuradio::get_initial_sptr(new conjugate_cc_impl(conjugate));
     }
 
-    conjugate_cc_impl::conjugate_cc_impl()
+    conjugate_cc_impl::conjugate_cc_impl(bool conjugate)
       : sync_block("conjugate_cc",
 		      io_signature::make (1, 1, sizeof(gr_complex)),
 		      io_signature::make (1, 1, sizeof(gr_complex)))
+      , d_conjugate(conjugate)
     {
       const int alignment_multiple =
 	volk_get_alignment() / sizeof(gr_complex);
       set_alignment(std::max(1, alignment_multiple));
+    }
+
+    void conjugate_cc_impl::set(bool enable)
+    {
+      d_conjugate = enable;
     }
 
     int
@@ -54,7 +60,10 @@ namespace gr {
       gr_complex *iptr = (gr_complex *) input_items[0];
       gr_complex *optr = (gr_complex *) output_items[0];
 
-      volk_32fc_conjugate_32fc(optr, iptr, noutput_items);
+      if (d_conjugate)
+        volk_32fc_conjugate_32fc(optr, iptr, noutput_items);
+      else
+        memcpy(optr, iptr, noutput_items * sizeof(gr_complex));
 
       return noutput_items;
     }

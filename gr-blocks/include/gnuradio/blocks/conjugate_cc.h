@@ -40,7 +40,9 @@ namespace gr {
       // gr::blocks::conjugate_cc_ff::sptr
       typedef boost::shared_ptr<conjugate_cc> sptr;
 
-      static sptr make();
+      static sptr make(bool conjugate = true);
+
+      virtual void set(bool conjugate)=0;
     };
 
   } /* namespace blocks */

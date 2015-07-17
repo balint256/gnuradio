@@ -31,11 +31,15 @@ namespace gr {
     class BLOCKS_API conjugate_cc_impl : public conjugate_cc
     {
     public:
-      conjugate_cc_impl();
+      conjugate_cc_impl(bool conjugate = true);
 
       int work(int noutput_items,
 	       gr_vector_const_void_star &input_items,
 	       gr_vector_void_star &output_items);
+
+      void set(bool conjugate);
+    private:
+      bool d_conjugate;
     };
 
   } /* namespace blocks */
