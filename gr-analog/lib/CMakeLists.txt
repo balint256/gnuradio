@@ -96,10 +96,10 @@ IF(MSVC)
 ENDIF(MSVC)
 
 list(APPEND analog_libs
-    volk
     gnuradio-runtime
     gnuradio-blocks
     gnuradio-filter
+    ${VOLK_LIBRARIES}
     ${Boost_LIBRARIES}
 )
 

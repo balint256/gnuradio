@@ -40,13 +40,13 @@ namespace gr {
 
     pdu_to_tagged_stream_impl::pdu_to_tagged_stream_impl(pdu::vector_type type, const std::string& tsb_tag_key, int sleep_duration)
       : tagged_stream_block("pdu_to_tagged_stream",
-          io_signature::make(0, 0, 0),
-          io_signature::make(1, 1, pdu::itemsize(type)),
-          tsb_tag_key),
-      d_itemsize(pdu::itemsize(type)),
-      d_type(type),
-      d_curr_len(0),
-    d_sleep_duration(sleep_duration)
+                            io_signature::make(0, 0, 0),
+                            io_signature::make(1, 1, pdu::itemsize(type)),
+                            tsb_tag_key),
+        d_itemsize(pdu::itemsize(type)),
+        d_type(type),
+        d_curr_len(0),
+        d_sleep_duration(sleep_duration)
     {
       message_port_register_in(PDU_PORT_ID);
     }
@@ -75,9 +75,9 @@ namespace gr {
 
     int
     pdu_to_tagged_stream_impl::work (int noutput_items,
-                       gr_vector_int &ninput_items,
-                       gr_vector_const_void_star &input_items,
-                       gr_vector_void_star &output_items)
+                                     gr_vector_int &ninput_items,
+                                     gr_vector_const_void_star &input_items,
+                                     gr_vector_void_star &output_items)
     {
       uint8_t *out = (uint8_t*) output_items[0];
 
