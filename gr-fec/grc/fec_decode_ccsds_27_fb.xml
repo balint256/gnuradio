@@ -17,4 +17,9 @@
     <name>out</name>
     <type>byte</type>
   </source>
+  <source>
+    <name>metric</name>
+    <type>float</type>
+    <optional>1</optional>
+  </source>
 </block>

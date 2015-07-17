@@ -38,7 +38,7 @@ namespace gr {
     decode_ccsds_27_fb_impl::decode_ccsds_27_fb_impl()
       : sync_decimator("decode_ccsds_27_fb",
                        io_signature::make (1, 1, sizeof(float)),
-                       io_signature::make (1, 1, sizeof(char)),
+                       io_signature::make2 (1, 2, sizeof(char), sizeof(float)),
                        2*8), d_count(0)  // Rate 1/2 code, unpacked to packed conversion
     {
       float RATE = 0.5;
@@ -48,6 +48,8 @@ namespace gr {
       gen_met(d_mettab, 100, esn0, 0.0, 256);
       viterbi_chunks_init(d_state0);
       viterbi_chunks_init(d_state1);
+    
+      memset(d_viterbi_in, 0x00, sizeof(d_viterbi_in));
     }
 
     int
@@ -57,6 +59,7 @@ namespace gr {
     {
       const float *in = (const float*)input_items[0];
       unsigned char *out = (unsigned char*)output_items[0];
+      float* metric_out = (float*)((output_items.size() == 2) ? output_items[1] : NULL);
 
       for (int i = 0; i < noutput_items*16; i++) {
 	// Translate and clip [-1.0..1.0] to [28..228]
@@ -74,9 +77,10 @@ namespace gr {
 
 	  // Every sixteenth symbol, read out a byte
 	  if (d_count % 16 == 11) {
-	    // long metric =
-	    viterbi_get_output(d_state0, out++);
+	    long metric = viterbi_get_output(d_state0, out++);
 	    // printf("%li\n", *(out-1), metric);
+        if (metric_out)
+          *metric_out++ = metric;
 	  }
 	}
 

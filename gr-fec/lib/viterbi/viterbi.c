@@ -326,7 +326,7 @@ viterbi_butterfly2(unsigned char *symbols, int mettab[2][256], struct viterbi_st
   BUTTERFLY(28,1);BUTTERFLY(29,0);BUTTERFLY(30,2);BUTTERFLY(31,3);
 }
 
-unsigned char
+/*unsigned char*/long
 viterbi_get_output(struct viterbi_state *state, unsigned char *outbuf) {
   // Produce output every 8 bits once path memory is full
   //  if((bitcnt % 8) == 5 && bitcnt > 32) {
@@ -343,6 +343,8 @@ viterbi_get_output(struct viterbi_state *state, unsigned char *outbuf) {
       beststate = i;
     }
   *outbuf =  state[beststate].path >> 24;
+  for(i=0;i<64;i++)
+    state[i].metric -= bestmetric;
   return bestmetric;
 }
 

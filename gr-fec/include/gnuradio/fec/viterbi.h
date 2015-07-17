@@ -49,5 +49,5 @@ viterbi_chunks_init(struct viterbi_state* state);
 viterbi_butterfly2(unsigned char *symbols, int mettab[2][256],
 		   struct viterbi_state *state0, struct viterbi_state *state1);
 
-FEC_API unsigned char
+FEC_API long
 viterbi_get_output(struct viterbi_state *state, unsigned char *outbuf);
