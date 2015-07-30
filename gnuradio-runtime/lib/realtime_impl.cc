@@ -38,6 +38,13 @@
 
 #include <iostream>
 
+#if defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) || \
+    defined(__FreeBSD__)
+#include <mach/mach_init.h>
+#include <mach/task_policy.h>
+#include <mach/task.h>
+#endif
+
 #if defined(HAVE_PTHREAD_SETSCHEDPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
 #include <pthread.h>
 
@@ -79,7 +86,7 @@ namespace gr {
       int pri = rescale_virtual_pri(p.priority, min_real_pri, max_real_pri);
 
       // FIXME check hard and soft limits with getrlimit, and limit the value we ask for.
-      // fprintf(stderr, "pthread_setschedparam: policy = %d, pri = %d\n", policy, pri);
+      fprintf(stderr, "pthread_setschedparam: policy = %d, pri = %d (min: %d, max: %d)\n", policy, pri, min_real_pri, max_real_pri);
 
       struct sched_param param;
       memset (&param, 0, sizeof (param));
@@ -96,7 +103,25 @@ namespace gr {
         }
       }
 
-      //printf("SCHED_FIFO enabled with priority = %d\n", pri);
+      printf("%s enabled with priority = %d\n", (policy == RT_SCHED_FIFO ? "SCHED_FIFO" : "SCHED_RR"), pri);
+
+#if defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) || \
+    defined(__FreeBSD__)
+      struct task_qos_policy qosinfo;
+      qosinfo.task_latency_qos_tier = LATENCY_QOS_TIER_0;
+      qosinfo.task_throughput_qos_tier = THROUGHPUT_QOS_TIER_0;
+      
+      int ret = task_policy_set(mach_task_self(), TASK_OVERRIDE_QOS_POLICY, (task_policy_t)&qosinfo, TASK_QOS_POLICY_COUNT);
+      if (ret == 0)
+      {
+          fprintf(stderr, "Successfully set mach task QoS\n");
+      }
+      else
+      {
+          fprintf(stderr, "Failed to set mach task QoS!\n");
+      }
+#endif
+      
       return RT_OK;
     }
 
