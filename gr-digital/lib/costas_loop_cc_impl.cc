@@ -35,17 +35,17 @@ namespace gr {
   namespace digital {
 
     costas_loop_cc::sptr
-    costas_loop_cc::make(float loop_bw, int order, bool use_snr)
+    costas_loop_cc::make(float loop_bw, int order, bool use_snr, float fmax/*=1.0*/, float fmin/*=-1.0*/)
     {
       return gnuradio::get_initial_sptr
-	(new costas_loop_cc_impl(loop_bw, order, use_snr));
+	(new costas_loop_cc_impl(loop_bw, order, use_snr, fmax, fmin));
     }
 
-    costas_loop_cc_impl::costas_loop_cc_impl(float loop_bw, int order, bool use_snr)
+    costas_loop_cc_impl::costas_loop_cc_impl(float loop_bw, int order, bool use_snr, float fmax/*=1.0*/, float fmin/*=-1.0*/)
       : sync_block("costas_loop_cc",
                    io_signature::make(1, 1, sizeof(gr_complex)),
                    io_signature::make2(1, 2, sizeof(gr_complex), sizeof(float))),
-	blocks::control_loop(loop_bw, 1.0, -1.0),
+	blocks::control_loop(loop_bw, fmax, fmin),
 	d_order(order), d_error(0), d_noise(1.0), d_phase_detector(NULL)
     {
       // Set up the phase detector to use based on the constellation order

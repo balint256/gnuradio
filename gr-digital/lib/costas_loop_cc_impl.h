@@ -89,7 +89,7 @@ namespace gr {
       float (costas_loop_cc_impl::*d_phase_detector)(gr_complex sample) const;
 
     public:
-      costas_loop_cc_impl(float loop_bw, int order, bool use_snr=false);
+      costas_loop_cc_impl(float loop_bw, int order, bool use_snr=false, float fmax=1.0, float fmin=-1.0);
       ~costas_loop_cc_impl();
 
       float error() const;

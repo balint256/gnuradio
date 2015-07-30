@@ -8,15 +8,30 @@
   <name>Costas Loop</name>
   <key>digital_costas_loop_cc</key>
   <import>from gnuradio import digital</import>
-  <make>digital.costas_loop_cc($w, $order, $use_snr)</make>
+  <make>digital.costas_loop_cc($w, $order, $use_snr, $fmax, $fmin)</make>
   <callback>set_loop_bandwidth($w)</callback>
+  <callback>set_min_freq($fmin)</callback>
+  <callback>set_max_freq($fmax)</callback>
 
   <param>
     <name>Loop Bandwidth</name>
     <key>w</key>
     <type>real</type>
   </param>
-
+  
+  <param>
+    <name>Minimum Freq Deviation</name>
+    <key>fmin</key>
+    <value>-1.0</value>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Maximum Freq Deviation</name>
+    <key>fmax</key>
+    <value>1.0</value>
+    <type>real</type>
+  </param>
+  
   <param>
     <name>Order</name>
     <key>order</key>

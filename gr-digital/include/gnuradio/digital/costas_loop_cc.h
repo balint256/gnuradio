@@ -78,7 +78,7 @@ namespace gr {
        * \param use_snr Use or ignore SNR estimates (from noise message port)
        *        in measurements; also uses tanh instead of slicing.
        */
-      static sptr make(float loop_bw, int order, bool use_snr=false);
+      static sptr make(float loop_bw, int order, bool use_snr=false, float fmax=1.0, float fmin=-1.0);
 
       /*!
        * Returns the current value of the loop error.
