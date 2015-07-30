@@ -53,17 +53,23 @@ namespace gr {
     void
     tcp_connection::send(pmt::pmt_t vector)
     {
-      size_t len = pmt::length(vector);
+      size_t len = 0;
+      const char* p = (const char*)pmt::uniform_vector_elements(vector, len);
       size_t offset = 0;
       std::vector<char> txbuf(std::min(len, d_buf.size()));
       while (offset < len) {
         size_t send_len = std::min((len - offset), txbuf.size());
-        memcpy(&txbuf[0], pmt::uniform_vector_elements(vector, offset), send_len);
+        memcpy(&txbuf[0], p + offset, send_len);
         offset += send_len;
-        boost::asio::async_write(d_socket, boost::asio::buffer(txbuf, send_len),
+        /*boost::asio::async_write(d_socket, boost::asio::buffer(txbuf, send_len),
 			       boost::bind(&tcp_connection::handle_write, this,
 					   boost::asio::placeholders::error,
-					   boost::asio::placeholders::bytes_transferred));
+					   boost::asio::placeholders::bytes_transferred));*/
+        try {
+          d_socket.send(boost::asio::buffer(txbuf, send_len));
+        } catch (const std::exception& e) {
+          //
+        }
       }
     }
 
