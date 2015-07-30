@@ -129,16 +129,16 @@ fprintf(stderr, "Inverted:    0x%llx\n", d_inverted_access_code);
 
   if (new_flag && new_inverted)
   {
-    fprintf(stderr, "%llu: Both normal and inverted flag found!\n", nitems_read(0));
+    fprintf(stderr, "Both normal and inverted flag found! (items read: %llu)\n", nitems_read(0));
   }
   else if (new_flag && d_invert)
   {
-    fprintf(stderr, "%llu: Switching to normal mode\n", nitems_read(0));
+    fprintf(stderr, "Switching to normal mode (items read: %llu)\n", nitems_read(0));
     d_invert = false;
   }
   else if (new_inverted && (d_invert == false))
   {
-    fprintf(stderr, "%llu: Switching to inverted mode\n", nitems_read(0));
+    fprintf(stderr, "Switching to inverted mode (items read: %llu)\n", nitems_read(0));
     d_invert = true;
   }
 
