@@ -122,6 +122,8 @@ class point_label_thread(threading.Thread, mutex):
 		self._plotter.Bind(wx.EVT_LEFT_DOWN, lambda evt: plotter.call_freq_callback(evt.GetPosition()))
 		#start the thread
 		threading.Thread.__init__(self)
+		self._is_running = True
+		self._plotter.Bind(wx.EVT_WINDOW_DESTROY, self.stop)
 		self.start()
 
 	def enqueue(self, coor):
@@ -133,7 +135,7 @@ class point_label_thread(threading.Thread, mutex):
 		last_ts = time.time()
 		last_coor = coor = None
 		try:
-			while True:
+			while self._is_running:
 				time.sleep(1.0/30.0)
 				self.lock()
 				#get most recent coor change
@@ -147,3 +149,12 @@ class point_label_thread(threading.Thread, mutex):
 					last_coor = coor
 					last_ts = time.time()
 		except wx.PyDeadObjectError: pass
+
+	def stop(self, event=None):
+		if event is not None and event.GetWindow() != self._plotter:
+			return
+		if not self._is_running:
+			return False
+		self._is_running = False
+		self.join()
+		return True
