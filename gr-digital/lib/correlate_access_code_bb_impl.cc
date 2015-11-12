@@ -36,19 +36,19 @@ namespace gr {
 #define VERBOSE 0
 
     correlate_access_code_bb::sptr
-    correlate_access_code_bb::make(const std::string &access_code, int threshold)
+    correlate_access_code_bb::make(const std::string &access_code, int threshold, bool detect_inversion/* = false*/)
     {
       return gnuradio::get_initial_sptr
-	(new correlate_access_code_bb_impl(access_code, threshold));
+	(new correlate_access_code_bb_impl(access_code, threshold, detect_inversion));
     }
 
     correlate_access_code_bb_impl::correlate_access_code_bb_impl(
-        const std::string &access_code, int threshold)
+        const std::string &access_code, int threshold, bool detect_inversion/* = false*/)
       : sync_block("correlate_access_code_bb",
 		      io_signature::make(1, 1, sizeof(char)),
 		      io_signature::make(1, 1, sizeof(char))),
 	d_data_reg(0), d_flag_reg(0), d_flag_bit(0), d_mask(0),
-	d_threshold(threshold), d_invert(false), d_invert_reg(0), d_invert_bit(0)
+	d_threshold(threshold), d_invert(false), d_invert_reg(0), d_invert_bit(0), d_detect_inversion(detect_inversion)
     {
       if(!set_access_code(access_code)) {
 	throw std::out_of_range ("access_code is > 64 bits");
@@ -83,8 +83,8 @@ namespace gr {
 	  d_access_code |= access_code[i] & 1;	// look at LSB only
     d_inverted_access_code |= (~access_code[i]) & 1;
       }
-fprintf(stderr, "Access code: 0x%llx\n", d_access_code);
-fprintf(stderr, "Inverted:    0x%llx\n", d_inverted_access_code);
+fprintf(stderr, "[%s<%ld>] Access code: 0x%llx\n", name().c_str(), unique_id(), d_access_code);
+fprintf(stderr, "[%s<%ld>] Inverted:    0x%llx\n", name().c_str(), unique_id(), d_inverted_access_code);
       return true;
     }
 
@@ -118,7 +118,7 @@ fprintf(stderr, "Inverted:    0x%llx\n", d_inverted_access_code);
 
 	// test for access code with up to threshold errors
 	new_flag = (nwrong <= d_threshold);
-  unsigned int new_inverted = (nwrong_inverted <= d_threshold);
+  unsigned int new_inverted = (nwrong_inverted <= d_threshold) & d_detect_inversion;
 
   if (new_inverted)
   {

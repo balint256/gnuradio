@@ -58,7 +58,7 @@ namespace gr {
        *                    e.g., "010101010111000100" 
        * \param threshold maximum number of bits that may be wrong
        */
-      static sptr make(const std::string &access_code, int threshold);
+      static sptr make(const std::string &access_code, int threshold, bool detect_inversion = false);
 
       /*!
        * Set a new access code.

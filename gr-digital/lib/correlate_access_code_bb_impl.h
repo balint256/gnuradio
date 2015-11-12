@@ -44,10 +44,11 @@ namespace gr {
                                         //   N is the number of bits in the access code)
       unsigned int d_threshold; 	// how many bits may be wrong in sync vector
       bool d_invert;
+      bool d_detect_inversion;
 
     public:
       correlate_access_code_bb_impl(const std::string &access_code,
-				    int threshold);
+				    int threshold, bool detect_inversion = false);
       ~correlate_access_code_bb_impl();
 
       int work(int noutput_items,

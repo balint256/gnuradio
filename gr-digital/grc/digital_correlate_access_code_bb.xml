@@ -8,7 +8,11 @@
 	<name>Correlate Access Code</name>
 	<key>digital_correlate_access_code_bb</key>
 	<import>from gnuradio import digital</import>
-	<make>digital.correlate_access_code_bb($access_code, $threshold)</make>
+	<make>digital.correlate_access_code_bb($access_code, $threshold#slurp
+#if str($detect_inversion) == 'True'
+, $detect_inversion#slurp
+#end if
+)</make>
 	<param>
 		<name>Access Code</name>
 		<key>access_code</key>
@@ -18,7 +22,23 @@
 	<param>
 		<name>Threshold</name>
 		<key>threshold</key>
+		<value>0</value>
 		<type>int</type>
+	</param>
+	<param>
+		<name>Detect Inversion</name>
+		<key>detect_inversion</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>#if str($detect_inversion) == 'False' then 'part' else 'none'#</hide>
+		<option>
+			<name>No</name>
+			<key>False</key>
+		</option>
+		<option>
+			<name>Yes</name>
+			<key>True</key>
+		</option>
 	</param>
 	<sink>
 		<name>in</name>
