@@ -84,7 +84,7 @@ namespace gr {
     d_inverted_access_code |= (~access_code[i]) & 1;
       }
 fprintf(stderr, "[%s<%ld>] Access code: 0x%llx\n", name().c_str(), unique_id(), d_access_code);
-fprintf(stderr, "[%s<%ld>] Inverted:    0x%llx\n", name().c_str(), unique_id(), d_inverted_access_code);
+if (d_detect_inversion) fprintf(stderr, "[%s<%ld>] Inverted:    0x%llx\n", name().c_str(), unique_id(), d_inverted_access_code);
       return true;
     }
 
