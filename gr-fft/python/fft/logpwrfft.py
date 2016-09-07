@@ -37,7 +37,7 @@ class _logpwrfft_base(gr.hier_block2):
     Create a log10(abs(fft)) stream chain, with real or complex input.
     """
 
-    def __init__(self, sample_rate, fft_size, ref_scale, frame_rate, avg_alpha, average, win=None):
+    def __init__(self, sample_rate, fft_size, ref_scale, frame_rate, avg_alpha, average, win=None, shift=False):
         """
         Create an log10(abs(fft)) stream chain.
         Provide access to the setting the filter and sample rate.
@@ -62,7 +62,7 @@ class _logpwrfft_base(gr.hier_block2):
 
         if win is None: win = window.blackmanharris
         fft_window = win(fft_size)
-        fft = self._fft_block[0](fft_size, True, fft_window)
+        fft = self._fft_block[0](fft_size, True, fft_window, shift)
         window_power = sum(map(lambda x: x*x, fft_window))
 
         c2magsq = blocks.complex_to_mag_squared(fft_size)
