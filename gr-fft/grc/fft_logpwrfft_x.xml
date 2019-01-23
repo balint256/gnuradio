@@ -15,6 +15,7 @@
 	frame_rate=$frame_rate,
 	avg_alpha=$avg_alpha,
 	average=$average,
+	shift=$shift,
 )</make>
 	<callback>set_sample_rate($sample_rate)</callback>
 	<callback>set_avg_alpha($avg_alpha)</callback>
@@ -27,11 +28,13 @@
 			<name>Complex</name>
 			<key>complex</key>
 			<opt>fcn:c</opt>
+			<opt>hide_shift:</opt>
 		</option>
 		<option>
 			<name>Float</name>
 			<key>float</key>
 			<opt>fcn:f</opt>
+			<opt>hide_shift:all</opt>
 		</option>
 	</param>
 	<param>
@@ -77,6 +80,21 @@
 		<key>avg_alpha</key>
 		<value>1.0</value>
 		<type>real</type>
+	</param>
+	<param>
+		<name>Shift</name>
+		<key>shift</key>
+		<value>False</value>
+		<type>enum</type>
+		<hide>$type.hide_shift</hide>
+		<option>
+			<name>Yes</name>
+			<key>True</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>False</key>
+		</option>
 	</param>
 	<sink>
 		<name>in</name>

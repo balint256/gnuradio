@@ -240,6 +240,8 @@ class channel_plotter(grid_plotter_base):
 			self.width-self.padding_left-self.padding_right-1,
 			self.height-self.padding_top-self.padding_bottom-1,
 		)
+
+		GL.glEnable(GL.GL_BLEND)
 		
 		#use opengl to scale the waveform
 		GL.glPushMatrix()
@@ -263,14 +265,22 @@ class channel_plotter(grid_plotter_base):
 		for k in self._lines:
 			l = self._lines[k]
 			t = l['type']
+			alpha = 1.0
+			if l.has_key('alpha'):
+				alpha = l['alpha']
 			if l.has_key('colour') and l['colour'] is not None:
-				GL.glColor3f(*l['colour'])
+				if len(l['colour']) == 3:
+					GL.glColor4f(*(l['colour'] + (alpha,)))
+				else:
+					GL.glColor4f(*(l['colour']))
+			elif l.has_key('coloura') and l['coloura'] is not None:
+				GL.glColor4f(*l['coloura'])
 			elif t == 'h':
-				GL.glColor3f(0.8, 0.0, 0.0)
+				GL.glColor4f(0.8, 0.0, 0.0, alpha)
 			elif t == 'v':
-				GL.glColor3f(0.0, 0.8, 0.0)
+				GL.glColor4f(0.0, 0.8, 0.0, alpha)
 			else:
-				GL.glColor3f(0.0, 0.0, 0.0)
+				GL.glColor4f(0.0, 0.0, 0.0, alpha)
 			
 			offset = l['offset']
 			if t == 'h':
@@ -283,34 +293,36 @@ class channel_plotter(grid_plotter_base):
 				GL.glVertex3f(offset, self.y_min, 0.0)
 				GL.glVertex3f(offset, self.y_max, 0.0)
 				GL.glEnd()
+			elif t == 'vr' and l.has_key('width'):
+				width = l['width']
+				GL.glBegin(GL.GL_QUADS)
+				GL.glVertex3f(offset-width/2, self.y_min, 0.0)
+				GL.glVertex3f(offset-width/2, self.y_max, 0.0)
+				GL.glVertex3f(offset+width/2, self.y_max, 0.0)
+				GL.glVertex3f(offset+width/2, self.y_min, 0.0)
+				GL.glEnd()
+			elif t == 'hr' and l.has_key('height'):
+				height = l['height']
+				GL.glBegin(GL.GL_QUADS)
+				GL.glVertex3f(self.x_min, offset+height/2, 0.0)
+				GL.glVertex3f(self.x_max, offset+height/2, 0.0)
+				GL.glVertex3f(self.x_max, offset-height/2, 0.0)
+				GL.glVertex3f(self.x_min, offset-height/2, 0.0)
+				GL.glEnd()
 		
 		GL.glPopMatrix()
+
+		GL.glDisable(GL.GL_BLEND)
 		
 		GL.glDisable(GL.GL_SCISSOR_TEST)
 
 	def set_horizontal_line(self, data):	# Assuming one line
-		#self.lock()
-		#if data is None:
-		#	if self._lines.has_key('h'):
-		#		del self._lines['h']
-		#else:
-		#	self._lines['h'] = data
-		#self._line_cache.changed(True)
-		#self.unlock()
 		if data is None:
 			self.set_line({'id':'h','action':False})
 		else:
 			self.set_line({'id':'h','action':True,'offset':data,'type':'h'})
 	
 	def set_vertical_line(self, data):	# Assuming one line
-		#self.lock()
-		#if data is None:
-		#	if self._lines.has_key('v'):
-		#		del self._lines['v']
-		#else:
-		#	self._lines['v'] = data
-		#self._line_cache.changed(True)
-		#self.unlock()
 		if data is None:
 			self.set_line({'id':'v','action':False})
 		else:
@@ -319,7 +331,9 @@ class channel_plotter(grid_plotter_base):
 	def set_line(self, data):
 		self.lock()
 		action = data['action']
-		if action == True:
+		if action == None:
+			self._lines = dict()
+		elif action == True:
 			self._lines[data['id']] = data
 		elif action == False:
 			if self._lines.has_key(data['id']):
