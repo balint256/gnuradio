@@ -78,6 +78,10 @@
 			<name>Saw Tooth</name>
 			<key>analog.GR_SAW_WAVE</key>
 		</option>
+		<option>
+			<name>Saw Tooth2</name>
+			<key>analog.GR_SAW_WAVE2</key>
+		</option>
 	</param>
 	<param>
 		<name>Frequency</name>

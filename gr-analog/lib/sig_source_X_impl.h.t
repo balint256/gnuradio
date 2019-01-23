@@ -41,6 +41,7 @@ namespace gr {
       double		d_ampl;
       @TYPE@		d_offset;
       gr::fxpt_nco	d_nco;
+      double    d_accum;
 
     public:
       @IMPL_NAME@(double sampling_freq, gr_waveform_t waveform,

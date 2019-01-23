@@ -50,7 +50,8 @@ namespace gr {
 		    io_signature::make(0, 0, 0),
 		    io_signature::make(1, 1, sizeof(@TYPE@))),
       d_sampling_freq(sampling_freq), d_waveform(waveform),
-      d_frequency(frequency), d_ampl(ampl), d_offset(offset)
+      d_frequency(frequency), d_ampl(ampl), d_offset(offset),
+      d_accum(0.0)
     {
       d_nco.set_freq(2 * M_PI * d_frequency / d_sampling_freq);
     }
@@ -147,6 +148,8 @@ namespace gr {
 	}
 	break;
 
+	  //case GR_SAW_WAVE2:	// FIXME
+
 #else			// nope...
 
       case GR_CONST_WAVE:
@@ -205,6 +208,23 @@ namespace gr {
 				  + d_ampl/2 + d_offset);
 	  optr[i] = t;
 	  d_nco.step();
+	}
+	break;
+
+	  case GR_SAW_WAVE2:
+	for(int i = 0; i < noutput_items; i++) {
+	  t = static_cast<@TYPE@>(
+	  	(d_ampl * d_accum)
+	  	+ d_ampl/2
+	  	+ d_offset
+	  );
+	  optr[i] = t;
+
+	  d_accum += (d_frequency / d_sampling_freq);
+	  if (d_accum >= 1.0)
+	  	d_accum = -1.0;
+	  else if (d_accum <= -1.0)
+	  	d_accum = 1.0;
 	}
 	break;
 
