@@ -597,6 +597,10 @@ namespace gr {
         //ignore overflows and try work again
         return work(noutput_items, input_items, output_items);
 
+      case ::uhd::rx_metadata_t::ERROR_CODE_BAD_PACKET:
+        std::cout << boost::format("UHD source block caught a bad packet. Source finished.") << std::endl;
+        return -1;
+
       default:
         std::cout << boost::format("UHD source block got error code 0x%x")
           % _metadata.error_code << std::endl;
